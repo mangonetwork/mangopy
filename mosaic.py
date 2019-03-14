@@ -12,6 +12,7 @@ sys.path.append('/Users/e30737/Desktop/Research/General')
 
 import numpy as np
 import tables
+import h5py
 import csv
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -49,6 +50,7 @@ class Mosaic(object):
             # get data
             try:
                 img, lat, lon, ttime = self.get_data(site,time)
+                # img, lat, lon, ttime = self.get_data_h5(site,time)
             except FileNotFoundError as e:
                 print(e)
                 truetime.append('')
@@ -175,6 +177,23 @@ class Mosaic(object):
         km = 6371* c
         return km
 
+    def get_data_h5(self,site,targtime):
+        datadir = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/'
+        filename = datadir + '{}/{:%b%d%y}/Processed/{:%b%d%y}{}.h5'.format(site['name'].replace(' ',''),targtime,targtime,site['code'])
+
+        file = h5py.File(filename, 'r')
+
+        tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
+        tstmp = file['Time'][:]
+        t = np.argmin(np.abs(tstmp-tstmp0))
+        truetime = dt.datetime.utcfromtimestamp(tstmp[t])
+
+        img_array = file['ImageData'][t,:,:]
+        lat = file['Latitude'][:]
+        lon = file['Longitude'][:]
+
+        return img_array, lat, lon, truetime
+
     def get_data(self,site,targtime):
 
         # find the file corresponding to the event time given
@@ -185,7 +204,8 @@ class Mosaic(object):
         # extract a list of times from the timestamps on file names in the data directory
         filetimes = []
         for file in os.listdir(filedir):
-            if file.endswith(filesuffix):
+            if file.startswith(site['code']) and file.endswith(filesuffix):
+                # print(file)
                 filetimes.append(dt.datetime.strptime(file[1:7],'%H%M%S').replace(year=2017,month=5,day=28))
         # find the time that's closest to the target time
         tstmp =  min(filetimes, key=lambda t: abs(t-targtime))
@@ -255,7 +275,7 @@ class Mosaic(object):
 
 
 def main():
-    # m = Mosaic(sites=['Bridger'])
+    # m = Mosaic(sites=['Rainwater Observatory'])
     m = Mosaic()
     m.plot_mosaic(dt.datetime(2017,5,28,5,35))
 
