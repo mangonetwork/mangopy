@@ -29,57 +29,125 @@ class Mosaic(object):
 
         self.site_list = self.get_sites('/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/SiteInformation.csv',sites)
 
-    def create_mosaic(self,time,edges=False):
+
+    def generate_grid(self,time):
 
         # create base background grid
+        # original images have the following approximate resolution:
+        # lat_res ~ 0.025
+        # lon_res ~ 0.035
         latmin = 25.
         latmax = 55.
-        latstp = 0.1
+        latstp = 0.02
+        # latstp = 1.
         lonmin = 225.
         lonmax = 300.
-        lonstp = 0.1
+        lonstp = 0.03
+        # lonstp = 1.
         grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
+        edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
         grid_shape = grid_lon.shape
         flat_grid = np.array([grid_lon.ravel(),grid_lat.ravel()]).T
 
         # get data from each site and interpolate it to background grid
         grid_img = []
-        truetime = []
+        # truetime = []
         for site in self.site_list:
 
+            print(site['name'])
             # get data
             try:
-                img, lat, lon, ttime = self.get_data(site,time)
+                # img, lat, lon, ttime = self.get_data(site,time)
+                img, lat, lon, __ = self.get_data(site,time)
                 # img, lat, lon, ttime = self.get_data_h5(site,time)
             except FileNotFoundError as e:
                 print(e)
-                truetime.append('')
+                # truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
                 continue
 
-            print(site['name'], ttime)
-            truetime.append(ttime)
-            print(img.shape, lat.shape, lon.shape)
-            print(img[np.isfinite(img)].shape, lat[np.isfinite(lat)].shape, lon[np.isfinite(lon)].shape)
+            flat_img = img.ravel()
+    
 
-            # flatten arrays and remove NAN points outside the camera FoV
-            flat_lat = lat[np.isfinite(lon)].ravel()
-            flat_lon = lon[np.isfinite(lon)].ravel()
-            flat_points = np.array([flat_lon,flat_lat]).T
-            flat_img = img[np.isfinite(lon)].ravel()
+            regrid_file = 'regrid'+site['code']+'.txt'
+            try:
+                nearest_idx = np.loadtxt(regrid_file,dtype='int32')
+            except:
+                flat_lat = lat.ravel()
+                flat_lon = lon.ravel()
+                flat_points = np.array([flat_lon,flat_lat]).T
+                flat_idx = np.arange(len(flat_lat))
 
-            # interpolate to background grid
-            img_interp = interpolate.griddata(flat_points,flat_img,flat_grid)
-            img_interp = img_interp.reshape(grid_shape)
+                nearest_idx = interpolate.griddata(flat_points,flat_idx,flat_grid,method='nearest')
+                nearest_idx = nearest_idx.reshape(grid_shape)
+                np.savetxt(regrid_file,nearest_idx)
 
+            img_interp = flat_img[nearest_idx]
             grid_img.append(img_interp)
 
         grid_img = np.array(grid_img)
+
+        return grid_img, grid_lat, grid_lon, edge_lat, edge_lon
+
+
+    def create_mosaic(self,time,edges=False):
+
+        # # create base background grid
+        # # original images have the following approximate resolution:
+        # # lat_res ~ 0.025
+        # # lon_res ~ 0.035
+        # latmin = 25.
+        # latmax = 55.
+        # latstp = 0.02
+        # lonmin = 225.
+        # lonmax = 300.
+        # lonstp = 0.03
+        # grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
+        # grid_shape = grid_lon.shape
+        # flat_grid = np.array([grid_lon.ravel(),grid_lat.ravel()]).T
+
+        # # get data from each site and interpolate it to background grid
+        # grid_img = []
+        # truetime = []
+        # for site in self.site_list:
+
+        #     # get data
+        #     try:
+        #         img, lat, lon, ttime = self.get_data(site,time)
+        #         # img, lat, lon, ttime = self.get_data_h5(site,time)
+        #     except FileNotFoundError as e:
+        #         print(e)
+        #         truetime.append('')
+        #         grid_img.append(np.full(grid_shape,np.nan))
+        #         continue
+
+        #     print(site['name'], ttime)
+        #     truetime.append(ttime)
+        #     # print(img.shape, lat.shape, lon.shape)
+        #     # print(img[np.isfinite(img)].shape, lat[np.isfinite(lat)].shape, lon[np.isfinite(lon)].shape)
+
+        #     # flatten arrays and remove NAN points outside the camera FoV
+        #     flat_lat = lat[np.isfinite(lon)].ravel()
+        #     flat_lon = lon[np.isfinite(lon)].ravel()
+        #     flat_points = np.array([flat_lon,flat_lat]).T
+        #     flat_img = img[np.isfinite(lon)].ravel()
+
+        #     # interpolate to background grid
+        #     img_interp = interpolate.griddata(flat_points,flat_img,flat_grid,method='nearest')
+        #     # interp = interpolate.NearestNDInterpolator(flat_points,flat_img)
+        #     # img_interp = interp(flat_grid)
+        #     img_interp = img_interp.reshape(grid_shape)
+
+        #     grid_img.append(img_interp)
+
+        # grid_img = np.array(grid_img)
+        grid_img, grid_lat, grid_lon, edge_lat, edge_lon = self.generate_grid(time)
 
         # find site hiarchy for background grid
         hiarchy = self.site_hiarchy(np.array([grid_lat,grid_lon]))
 
         # create combined grid of all sites based on site hiarchy
+        grid_shape = grid_lat.shape
         combined_grid = np.empty(grid_shape)
         for i in range(grid_shape[0]):
             for j in range(grid_shape[1]):
@@ -91,8 +159,8 @@ class Mosaic(object):
                 combined_grid[i,j] = v
 
         if edges:
-            edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
-            return combined_grid, grid_lat, grid_lon, edge_lat, edge_lon, truetime
+            # edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
+            return combined_grid, grid_lat, grid_lon, edge_lat, edge_lon, time
         else:
             return combined_grid, grid_lat, grid_lon
 
@@ -102,16 +170,18 @@ class Mosaic(object):
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, edges=True)
 
         # set up map
-        # ax = plt.axes(projection=ccrs.PlateCarree())
-        ax = plt.axes(projection=ccrs.LambertConformal(central_longitude=-110.,central_latitude=40.0))
-        # ax = plt.axes(projection=ccrs.Mollweide())
+        # map_proj = ccrs.PlateCarree()
+        map_proj = ccrs.LambertConformal(central_longitude=-110.,central_latitude=40.0)
+        # map_proj = ccrs.Mollweide()
+        fig = plt.figure(figsize=(15,10))
+        ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
         ax.gridlines()
         ax.add_feature(cfeature.STATES)
         ax.set_extent([225,300,25,50])
 
         # plot image on map
-        plt.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
+        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
 
         # # plot sites on map
         # asi_az = np.linspace(0,360,50)*np.pi/180.
@@ -120,14 +190,15 @@ class Mosaic(object):
         #     lat, lon, alt = self.projected_beam(site['lat'],site['lon'],0,asi_az,asi_el,proj_alt=250.)
         #     plt.plot(lon,lat,transform=ccrs.Geodetic())
 
-        # print actual image times below plot
-        img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
-        img_times = '\n'.join(img_times)
-        plt.text(0.05,-0.5,img_times,transform=ax.transAxes)
+        # # print actual image times below plot
+        # img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
+        # img_times = '\n'.join(img_times)
+        # ax.text(0.05,-0.5,img_times,transform=ax.transAxes)
 
         # add target time as title of plot
-        plt.title('{:%Y-%m-%d %H:%M}'.format(time))
+        ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
 
+        plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time))
         plt.show()
 
 
