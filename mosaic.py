@@ -21,6 +21,10 @@ from scipy import interpolate
 import os
 import datetime as dt
 
+# from shapely.geometry import Point, MultiPoint
+# from shapely.geometry.polygon import Polygon
+from scipy.spatial import ConvexHull
+
 
 
 class Mosaic(object):
@@ -44,7 +48,11 @@ class Mosaic(object):
         lonmax = 300.
         lonstp = 0.03
         # lonstp = 1.
-        grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
+        lat_arr = np.arange(latmin,latmax,latstp)
+        lon_arr = np.arange(lonmin,lonmax,lonstp)
+
+        # grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
+        grid_lon, grid_lat = np.meshgrid(lon_arr,lat_arr)
         edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
         grid_shape = grid_lon.shape
         flat_grid = np.array([grid_lon.ravel(),grid_lat.ravel()]).T
@@ -71,18 +79,47 @@ class Mosaic(object):
 
             regrid_file = 'regrid'+site['code']+'.txt'
             try:
-                nearest_idx = np.loadtxt(regrid_file,dtype='int32')
+                nearest_idx = np.loadtxt(regrid_file)
+                # nearest_idx = np.loadtxt('This file doesnt exist')
             except:
                 flat_lat = lat.ravel()
                 flat_lon = lon.ravel()
-                flat_points = np.array([flat_lon,flat_lat]).T
                 flat_idx = np.arange(len(flat_lat))
 
-                nearest_idx = interpolate.griddata(flat_points,flat_idx,flat_grid,method='nearest')
-                nearest_idx = nearest_idx.reshape(grid_shape)
+                flat_idx = flat_idx[np.isfinite(flat_lat)]
+                flat_lon = flat_lon[np.isfinite(flat_lat)]
+                flat_lat = flat_lat[np.isfinite(flat_lat)]
+                flat_points = np.array([flat_lon,flat_lat]).T
+
+                fov = flat_points[ConvexHull(flat_points).vertices].T
+                # print(fov)
+                center_lon = site['lon']
+                if center_lon<0:
+                    center_lon += 360.
+                # find points west of site
+                fovW = fov[:,fov[0,:]<center_lon]
+                # find points east of site
+                fovE = fov[:,fov[0,:]>center_lon]
+                # find longitude limits for each latitude row in the grid
+                limits = []
+                for f in [fovW,fovE]:
+                    f = f[:,np.argsort(f[1,:])]
+                    limits.append(np.interp(lat_arr,f[1,:],f[0,:],left=np.nan,right=np.nan))
+                # create flag array identifying points in grid within fov
+                flags = np.all(np.array([lon_arr>=limits[0][:,None],lon_arr<=limits[1][:,None]]),axis=0)
+
+                # find index of image cell that is closest to each grid cell in the fov
+                nearest_idx = np.full(grid_shape,np.nan)
+                nearest_idx[flags] = interpolate.griddata(flat_points,flat_idx,flat_grid[flags.ravel()],method='nearest')
+
+                # save index mapping array
                 np.savetxt(regrid_file,nearest_idx)
 
-            img_interp = flat_img[nearest_idx]
+            # interpolate image to grid
+            img_interp = np.full(grid_shape,np.nan)
+            img_interp[np.isfinite(nearest_idx)] = flat_img[nearest_idx[np.isfinite(nearest_idx)].astype('int32')]
+
+            # add interpolated image to the list of interpolated images from all sites
             grid_img.append(img_interp)
 
         grid_img = np.array(grid_img)
