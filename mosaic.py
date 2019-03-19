@@ -36,6 +36,11 @@ class Mosaic(object):
 
     def generate_grid(self,time):
 
+        rewrite_file = False
+        regrid_file = 'regrid_image_index.h5'
+        if rewrite_file:
+            os.remove(regrid_file)
+
         # create base background grid
         # original images have the following approximate resolution:
         # lat_res ~ 0.025
@@ -77,10 +82,9 @@ class Mosaic(object):
             flat_img = img.ravel()
     
 
-            regrid_file = 'regrid'+site['code']+'.txt'
             try:
-                nearest_idx = np.loadtxt(regrid_file)
-                # nearest_idx = np.loadtxt('This file doesnt exist')
+                with h5py.File(regrid_file,'r') as f:
+                    nearest_idx = f[site['name']][:]
             except:
                 flat_lat = lat.ravel()
                 flat_lon = lon.ravel()
@@ -112,8 +116,8 @@ class Mosaic(object):
                 nearest_idx = np.full(grid_shape,np.nan)
                 nearest_idx[flags] = interpolate.griddata(flat_points,flat_idx,flat_grid[flags.ravel()],method='nearest')
 
-                # save index mapping array
-                np.savetxt(regrid_file,nearest_idx)
+                with h5py.File(regrid_file, 'a') as f:
+                    f.create_dataset(site['name'], data=nearest_idx, compression='gzip', compression_opts=1)
 
             # interpolate image to grid
             img_interp = np.full(grid_shape,np.nan)
