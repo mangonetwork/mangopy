@@ -18,8 +18,8 @@ import h5py
 import csv
 import datetime as dt
 
-#date = dt.date(2017,5,28)
-code = 'R'
+date = dt.date(2017,5,28)
+code = 'D'
 
 # create site list from the site file and user input
 sitefile = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/SiteInformation.csv'

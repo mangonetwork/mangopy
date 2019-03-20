@@ -10,25 +10,29 @@ import csv
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import os
 
 
 class Mango(object):
 
     def __init__(self,sitename):
 
-        sitefile = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/SiteInformation.csv'
+        sitefile = 'SiteInformation.csv'
+        datadir = './MANGOData/'
         self.site = self.get_site_info(sitename, sitefile)
+
+        self.datadir = datadir + '{}/'.format(self.site['name'])
 
     def plot(self,targtime):
         # plot single mango image
-        img, __, __, truetime = self.get_data(targtime)
+        img, __, __, truetime = self.read_data(targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
 
     def map(self,targtime):
         # map single mango image
-        img, lat, lon, truetime = self.get_data(targtime)
+        img, lat, lon, truetime = self.read_data(targtime)
 
         # set up map
         fig = plt.figure()
@@ -47,10 +51,9 @@ class Mango(object):
 
         plt.show()
 
-    def get_data(self,targtime):
+    def read_data(self,targtime):
         # read mango data file
-        datadir = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/'
-        filename = datadir + '{}/{:%b%d%y}/Processed/{:%b%d%y}{}.h5'.format(self.site['name'].replace(' ',''),targtime,targtime,self.site['code'])
+        filename = self.datadir + '{}{:%b%d%y}.h5'.format(self.site['code'],targtime)
 
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -64,22 +67,36 @@ class Mango(object):
 
         return img_array, lat, lon, truetime
 
-    def fetch_data(self, save_directory='./MANGOData/'):
+    def fetch_data(self, date, save_directory=None):
         # fetch mango data from online repository
         # Curtesy of AReimer's url_fetcher() function
         import os
-        import urllib2
+        # NOTE: urllib2 does not work with python 3.  I've modified this so that it's python 3 complatible,
+        #   but I havn't tested it with python 2. (2019-03-19 LL)
+        # import urllib2
+        from urllib.request import urlopen
         from contextlib import closing
-        # takes in a dictionary of format:
-        # dict = {'URL':'some url','time':utctimestamp in unix epoch seconds}
+
+        # form url
+        url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{}/{:%b%d%y}/{}{:%b%d%y}.h5'.format(self.site['name'],date,self.site['code'],date)
+
+        # make sure save directory exists
+        if not save_directory:
+            save_directory = self.datadir
+        try:
+            os.mkdir(save_directory)
+        except:
+            pass
 
         # first check the file at the link and look/compare with archived.
 
         filename = os.path.basename(url)
 
         output_filename = os.path.join(save_directory,filename)
+        # print(output_filename)
 
-        with closing(urllib2.urlopen(url)) as d:
+        # with closing(urllib2.urlopen(url)) as d:
+        with closing(urlopen(url)) as d:
             url_size = int(d.info()['Content-Length'])
 
             download = True
@@ -90,7 +107,7 @@ class Mango(object):
                     download = False
 
             if download:
-                with open(output_filename,'w') as f:
+                with open(output_filename,'wb') as f:
                     f.write(d.read())
 
         if download:
@@ -117,8 +134,11 @@ class Mango(object):
 
 def main():
 
-    m = Mango('Rainwater Observatory')
-    m.map(dt.datetime(2017,5,28,5,35))
+    m = Mango('Madison')
+    time = dt.datetime(2017,5,28,5,35)
+    # m.fetch_data(time)
+    m.plot(time)
+    m.map(time)
 
 if __name__ == '__main__':
     main()

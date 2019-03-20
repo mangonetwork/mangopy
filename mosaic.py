@@ -6,8 +6,8 @@
 #   - adjust these in __init__() and get_data()
 
 
-import sys
-sys.path.append('/Users/e30737/Desktop/Research/General')
+# import sys
+# sys.path.append('/Users/e30737/Desktop/Research/General')
 
 
 import numpy as np
@@ -31,7 +31,7 @@ class Mosaic(object):
 
     def __init__(self,sites='all'):
 
-        self.site_list = self.get_sites('/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/SiteInformation.csv',sites)
+        self.site_list = self.get_sites('SiteInformation.csv',sites)
 
 
     def generate_grid(self,time):
