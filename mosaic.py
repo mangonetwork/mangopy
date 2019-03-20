@@ -2,36 +2,36 @@
 # create mosaic plot from multiple MANGO sites
 # 
 # created 2019-03-13 by LLamarche
-# - paths to SiteInfomation.csv and data files are currently hard coded
-#   - adjust these in __init__() and get_data()
+# - SiteInfomation.csv must be in the running directory
+#    and data files are in ./MANGOData/<site>
+#   - adjust these in mango.py __init__()
+# - site regridding is stored in regrid_image_index.h5
+#   - this file can be removed, but it will be recreated
+#     every time the program is run
 
-
-# import sys
-# sys.path.append('/Users/e30737/Desktop/Research/General')
 
 
 import numpy as np
 import tables
 import h5py
-import csv
+# import csv
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from scipy import interpolate
 import os
 import datetime as dt
-
-# from shapely.geometry import Point, MultiPoint
-# from shapely.geometry.polygon import Polygon
 from scipy.spatial import ConvexHull
+from mango import Mango
 
 
 
-class Mosaic(object):
+class Mosaic(Mango):
 
     def __init__(self,sites='all'):
 
-        self.site_list = self.get_sites('SiteInformation.csv',sites)
+        super(Mosaic, self).__init__()
+        self.site_list = self.get_site_info(sites)
 
 
     def generate_grid(self,time):
@@ -43,8 +43,8 @@ class Mosaic(object):
 
         # create base background grid
         # original images have the following approximate resolution:
-        # lat_res ~ 0.025
-        # lon_res ~ 0.035
+        # lat_res ~ 0.025 degrees
+        # lon_res ~ 0.035 degrees
         latmin = 25.
         latmax = 55.
         latstp = 0.02
@@ -56,7 +56,6 @@ class Mosaic(object):
         lat_arr = np.arange(latmin,latmax,latstp)
         lon_arr = np.arange(lonmin,lonmax,lonstp)
 
-        # grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
         grid_lon, grid_lat = np.meshgrid(lon_arr,lat_arr)
         edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
         grid_shape = grid_lon.shape
@@ -70,10 +69,8 @@ class Mosaic(object):
             print(site['name'])
             # get data
             try:
-                # img, lat, lon, ttime = self.get_data(site,time)
-                img, lat, lon, __ = self.get_data(site,time)
-                # img, lat, lon, ttime = self.get_data_h5(site,time)
-            except FileNotFoundError as e:
+                img, lat, lon, __ = self.read_data(site,time)
+            except OSError as e:
                 print(e)
                 # truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
@@ -133,55 +130,6 @@ class Mosaic(object):
 
     def create_mosaic(self,time,edges=False):
 
-        # # create base background grid
-        # # original images have the following approximate resolution:
-        # # lat_res ~ 0.025
-        # # lon_res ~ 0.035
-        # latmin = 25.
-        # latmax = 55.
-        # latstp = 0.02
-        # lonmin = 225.
-        # lonmax = 300.
-        # lonstp = 0.03
-        # grid_lon, grid_lat = np.meshgrid(np.arange(lonmin,lonmax,lonstp),np.arange(latmin,latmax,latstp))
-        # grid_shape = grid_lon.shape
-        # flat_grid = np.array([grid_lon.ravel(),grid_lat.ravel()]).T
-
-        # # get data from each site and interpolate it to background grid
-        # grid_img = []
-        # truetime = []
-        # for site in self.site_list:
-
-        #     # get data
-        #     try:
-        #         img, lat, lon, ttime = self.get_data(site,time)
-        #         # img, lat, lon, ttime = self.get_data_h5(site,time)
-        #     except FileNotFoundError as e:
-        #         print(e)
-        #         truetime.append('')
-        #         grid_img.append(np.full(grid_shape,np.nan))
-        #         continue
-
-        #     print(site['name'], ttime)
-        #     truetime.append(ttime)
-        #     # print(img.shape, lat.shape, lon.shape)
-        #     # print(img[np.isfinite(img)].shape, lat[np.isfinite(lat)].shape, lon[np.isfinite(lon)].shape)
-
-        #     # flatten arrays and remove NAN points outside the camera FoV
-        #     flat_lat = lat[np.isfinite(lon)].ravel()
-        #     flat_lon = lon[np.isfinite(lon)].ravel()
-        #     flat_points = np.array([flat_lon,flat_lat]).T
-        #     flat_img = img[np.isfinite(lon)].ravel()
-
-        #     # interpolate to background grid
-        #     img_interp = interpolate.griddata(flat_points,flat_img,flat_grid,method='nearest')
-        #     # interp = interpolate.NearestNDInterpolator(flat_points,flat_img)
-        #     # img_interp = interp(flat_grid)
-        #     img_interp = img_interp.reshape(grid_shape)
-
-        #     grid_img.append(img_interp)
-
-        # grid_img = np.array(grid_img)
         grid_img, grid_lat, grid_lon, edge_lat, edge_lon = self.generate_grid(time)
 
         # find site hiarchy for background grid
@@ -211,10 +159,8 @@ class Mosaic(object):
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, edges=True)
 
         # set up map
-        # map_proj = ccrs.PlateCarree()
-        map_proj = ccrs.LambertConformal(central_longitude=-110.,central_latitude=40.0)
-        # map_proj = ccrs.Mollweide()
         fig = plt.figure(figsize=(15,10))
+        map_proj = ccrs.LambertConformal(central_longitude=-110.,central_latitude=40.0)
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
         ax.gridlines()
@@ -224,18 +170,6 @@ class Mosaic(object):
         # plot image on map
         ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
 
-        # # plot sites on map
-        # asi_az = np.linspace(0,360,50)*np.pi/180.
-        # asi_el = np.full(50,15.)*np.pi/180.
-        # for site in self.site_list:
-        #     lat, lon, alt = self.projected_beam(site['lat'],site['lon'],0,asi_az,asi_el,proj_alt=250.)
-        #     plt.plot(lon,lat,transform=ccrs.Geodetic())
-
-        # # print actual image times below plot
-        # img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
-        # img_times = '\n'.join(img_times)
-        # ax.text(0.05,-0.5,img_times,transform=ax.transAxes)
-
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
 
@@ -243,21 +177,6 @@ class Mosaic(object):
         plt.show()
 
 
-
-    def get_sites(self,sitefile,sites):
-        # create site list from the site file and user input
-        site_list = []
-        with open(sitefile,'r') as f:
-            next(f)         # skip header line
-            reader = csv.reader(f)
-            for row in reader:
-                site_list.append({'name':row[0],'code':row[1],'lon':float(row[2]),'lat':float(row[3])})
-
-        # if particular sites are given, only include those sites in the site list
-        if sites != 'all':
-            site_list = [s for s in site_list if s['name'] in sites]
-
-        return site_list
 
     def site_hiarchy(self,grid_points):
         # calculate site hiarcy for common grid based on the distance of each point from each site
@@ -289,105 +208,10 @@ class Mosaic(object):
         km = 6371* c
         return km
 
-    def get_data_h5(self,site,targtime):
-        datadir = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/'
-        filename = datadir + '{}/{:%b%d%y}/Processed/{:%b%d%y}{}.h5'.format(site['name'].replace(' ',''),targtime,targtime,site['code'])
-
-        file = h5py.File(filename, 'r')
-
-        tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
-        tstmp = file['Time'][:]
-        t = np.argmin(np.abs(tstmp-tstmp0))
-        truetime = dt.datetime.utcfromtimestamp(tstmp[t])
-
-        img_array = file['ImageData'][t,:,:]
-        lat = file['Latitude'][:]
-        lon = file['Longitude'][:]
-
-        return img_array, lat, lon, truetime
-
-    def get_data(self,site,targtime):
-
-        # find the file corresponding to the event time given
-        # filedir = '/Users/e30737/Desktop/Projects/InGeO/MANGO/MANGO/Data/{}/May2817/'.format(site['name'].replace(' ',''))
-        datadir = '/Users/e30737/Desktop/Projects/InGeO/MANGO/Data/'
-        filedir = datadir+'{}/{:%b%d%y}/Processed/'.format(site['name'].replace(' ',''),targtime)
-        filesuffix = '.h5'
-        # extract a list of times from the timestamps on file names in the data directory
-        filetimes = []
-        for file in os.listdir(filedir):
-            if file.startswith(site['code']) and file.endswith(filesuffix):
-                # print(file)
-                filetimes.append(dt.datetime.strptime(file[1:7],'%H%M%S').replace(year=2017,month=5,day=28))
-        # find the time that's closest to the target time
-        tstmp =  min(filetimes, key=lambda t: abs(t-targtime))
-        # raise error if no file is found within 10 minutes of the requested time
-        if abs((tstmp-targtime).total_seconds())>300.:
-            raise FileNotFoundError('No file found for {} at {:%Y-%m-%d %H:%M}'.format(site['name'],targtime))
-        # form filename
-        filename = filedir+'{}{:%H%M%S}'.format(site['code'],tstmp)+filesuffix
-
-
-        # open hdf5 file and read image array
-        with tables.open_file(filename,'r') as h5file:
-            img_array = h5file.get_node('/imageData').read()
-
-        # read in latitude file
-        latfile = datadir+'{}/Latitudes.csv'.format(site['name'].replace(' ',''))
-        # if site['name'] == 'Bridger':
-        #     latfile = 'Data/{}/Bridger400/Latitudes.csv'.format(site['name'].replace(' ',''))
-        with open(latfile,'r') as f:
-            reader = csv.reader(f)
-            lat = np.array([[float(v) for v in row] for row in reader])
-
-        # read in longitude file
-        lonfile = datadir+'{}/Longitudes.csv'.format(site['name'].replace(' ',''))
-        # if site['name'] == 'Bridger':
-        #     latfile = 'Data/{}/Bridger400/Longitudes.csv'.format(site['name'].replace(' ',''))
-        with open(lonfile,'r') as f:
-            reader = csv.reader(f)
-            lon = np.array([[float(v) for v in row] for row in reader])
-        # adjust longitude coordinates so that they are in the range [0,360] (nessisary for grid interpolation)
-        lon[lon<0]+=360.
-
-        return img_array, lat, lon, tstmp
-
-
-    # def projected_beam(self,lat0,lon0,alt0,azimuth,elevation,proj_alt=300.):
-    #     import coord_convert as cc
-
-    #     points = np.arange(0.,proj_alt/np.sin(min(elevation)),1.)*1000.
-    #     x0, y0, z0 = cc.geodetic_to_cartesian(lat0,lon0,alt0)
-
-    #     latitude = []
-    #     longitude = []
-    #     altitude = []
-
-    #     for el, az in zip(elevation,azimuth):
-
-    #         ve = np.cos(el)*np.sin(az)
-    #         vn = np.cos(el)*np.cos(az)
-    #         vu = np.sin(el)
-
-    #         vx, vy, vz = cc.vector_geodetic_to_cartesian(vn,ve,vu,lat0,lon0,alt0)
-
-    #         lat, lon, alt = cc.cartesian_to_geodetic(x0+vx*points,y0+vy*points,z0+vz*points)
-
-    #         idx = (np.abs(alt-proj_alt)).argmin()
-
-    #         latitude.append(lat[idx])
-    #         longitude.append(lon[idx])
-    #         altitude.append(alt[idx])
-
-    #     latitude = np.array(latitude)
-    #     longitude = np.array(longitude)
-    #     altitude = np.array(altitude)
-
-    #     return latitude, longitude, altitude
 
 
 def main():
-    # m = Mosaic(sites=['Rainwater Observatory'])
+    # m = Mosaic(sites=['Rainwater Observatory','Hat Creek Observatory'])
     m = Mosaic()
     m.plot_mosaic(dt.datetime(2017,5,28,5,35))
 

@@ -124,24 +124,32 @@ class Mango(object):
             else:
                 print("    Successfully downloaded: %s" % filename)
 
-    def get_site_info(self,sitename):
-        # get site info from sitefile based on site name provided
+
+    def get_site_info(self,sites):
+        # create site list from the site file and user input
+        site_list = []
         with open(self.sitefile,'r') as f:
             next(f)         # skip header line
             reader = csv.reader(f)
             for row in reader:
-                if sitename == row[0]:
-                    site = {'name':row[0],'code':row[1],'lon':float(row[2]),'lat':float(row[3])}
-                    return site
+                site_list.append({'name':row[0],'code':row[1],'lon':float(row[2]),'lat':float(row[3])})
+
+        # if particular sites are given, only include those sites in the site list
+        if sites != 'all':
+            site_list = [s for s in site_list if s['name'] in sites]
+
+        if len(site_list) == 1:
+            return site_list[0]
+        else:
+            return site_list
+
 
 
 def main():
 
     m = Mango()
     site = m.get_site_info('Hat Creek Observatory')
-    print(site)
     time = dt.datetime(2017,5,28,5,35)
-    # m.fetch_data(time)
     m.plot(site,time)
     m.map(site,time)
 
