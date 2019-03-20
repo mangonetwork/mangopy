@@ -15,24 +15,24 @@ import os
 
 class Mango(object):
 
-    def __init__(self,sitename):
+    def __init__(self):
 
-        sitefile = 'SiteInformation.csv'
-        datadir = './MANGOData/'
-        self.site = self.get_site_info(sitename, sitefile)
+        self.sitefile = 'SiteInformation.csv'
+        self.datadir = './MANGOData/'
+        # self.site = self.get_site_info(sitename, sitefile)
 
-        self.datadir = datadir + '{}/'.format(self.site['name'])
+        # self.datadir = datadir + '{}/'.format(self.site['name'])
 
-    def plot(self,targtime):
+    def plot(self,site,targtime):
         # plot single mango image
-        img, __, __, truetime = self.read_data(targtime)
+        img, __, __, truetime = self.read_data(site,targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
 
-    def map(self,targtime):
+    def map(self,site,targtime):
         # map single mango image
-        img, lat, lon, truetime = self.read_data(targtime)
+        img, lat, lon, truetime = self.read_data(site,targtime)
 
         # set up map
         fig = plt.figure()
@@ -51,9 +51,11 @@ class Mango(object):
 
         plt.show()
 
-    def read_data(self,targtime):
+    def read_data(self,site,targtime):
         # read mango data file
-        filename = self.datadir + '{}{:%b%d%y}.h5'.format(self.site['code'],targtime)
+        # self.datadir = datadir + '{}/'.format(self.site['name'])
+
+        filename = self.datadir + '{}/{}{:%b%d%y}.h5'.format(site['name'],site['code'],targtime)
 
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -67,7 +69,7 @@ class Mango(object):
 
         return img_array, lat, lon, truetime
 
-    def fetch_data(self, date, save_directory=None):
+    def fetch_data(self, site, date, save_directory=None):
         # fetch mango data from online repository
         # Curtesy of AReimer's url_fetcher() function
         import os
@@ -81,8 +83,9 @@ class Mango(object):
         url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{}/{:%b%d%y}/{}{:%b%d%y}.h5'.format(self.site['name'],date,self.site['code'],date)
 
         # make sure save directory exists
+        # self.datadir = datadir + '{}/'.format(self.site['name'])
         if not save_directory:
-            save_directory = self.datadir
+            save_directory = self.datadir + '{}/'.format(site['name'])
         try:
             os.mkdir(save_directory)
         except:
@@ -121,9 +124,9 @@ class Mango(object):
             else:
                 print("    Successfully downloaded: %s" % filename)
 
-    def get_site_info(self,sitename, sitefile):
+    def get_site_info(self,sitename):
         # get site info from sitefile based on site name provided
-        with open(sitefile,'r') as f:
+        with open(self.sitefile,'r') as f:
             next(f)         # skip header line
             reader = csv.reader(f)
             for row in reader:
@@ -134,11 +137,13 @@ class Mango(object):
 
 def main():
 
-    m = Mango('Madison')
+    m = Mango()
+    site = m.get_site_info('Hat Creek Observatory')
+    print(site)
     time = dt.datetime(2017,5,28,5,35)
     # m.fetch_data(time)
-    m.plot(time)
-    m.map(time)
+    m.plot(site,time)
+    m.map(site,time)
 
 if __name__ == '__main__':
     main()
