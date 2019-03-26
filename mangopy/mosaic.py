@@ -22,8 +22,8 @@ from scipy import interpolate
 import os
 import datetime as dt
 from scipy.spatial import ConvexHull
-from mango import Mango
-
+from .mango import Mango
+# from mango import mango
 
 
 class Mosaic(Mango):
