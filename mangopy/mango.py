@@ -17,11 +17,10 @@ class Mango(object):
 
     def __init__(self):
 
-        self.sitefile = 'SiteInformation.csv'
-        self.datadir = './MANGOData/'
-        # self.site = self.get_site_info(sitename, sitefile)
+        mangopy_path = os.path.dirname(__file__)[:-8]
+        self.sitefile = os.path.join(mangopy_path,'SiteInformation.csv')
+        self.datadir = os.path.join(mangopy_path,'MANGOData/')
 
-        # self.datadir = datadir + '{}/'.format(self.site['name'])
 
     def plot(self,site,targtime):
         # plot single mango image
