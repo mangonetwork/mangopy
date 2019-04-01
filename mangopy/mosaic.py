@@ -63,30 +63,31 @@ class Mosaic(Mango):
 
         # get data from each site and interpolate it to background grid
         grid_img = []
-        # truetime = []
+        truetime = []
         for site in self.site_list:
 
             print(site['name'])
             # get data
             try:
-                img, lat, lon, truetime = self.read_data(site,time)
-                print(site['name'], truetime)
+                img, lat, lon, tt = self.read_data(site,time)
+                # print(site['name'], tt)
+                truetime.append(tt)
             except OSError as e:
                 print(e)
-                # truetime.append('')
+                truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
                 continue
             except IOError as e:
                 print(e)
-                # truetime.append('')
+                truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
                 continue
             except ValueError as e:
                 print(e)
-                # truetime.append('')
+                truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
                 continue
-                
+
 
             flat_img = img.ravel()
     
@@ -137,12 +138,12 @@ class Mosaic(Mango):
 
         grid_img = np.array(grid_img)
 
-        return grid_img, grid_lat, grid_lon, edge_lat, edge_lon
+        return grid_img, grid_lat, grid_lon, edge_lat, edge_lon, truetime
 
 
     def create_mosaic(self,time,edges=False):
 
-        grid_img, grid_lat, grid_lon, edge_lat, edge_lon = self.generate_grid(time)
+        grid_img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.generate_grid(time)
 
         # find site hiarchy for background grid
         hiarchy = self.site_hiarchy(np.array([grid_lat,grid_lon]))
@@ -161,7 +162,7 @@ class Mosaic(Mango):
 
         if edges:
             # edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
-            return combined_grid, grid_lat, grid_lon, edge_lat, edge_lon, time
+            return combined_grid, grid_lat, grid_lon, edge_lat, edge_lon, truetime
         else:
             return combined_grid, grid_lat, grid_lon
 
@@ -184,6 +185,13 @@ class Mosaic(Mango):
 
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
+
+        # print actual image times below plot
+        img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
+        img_times = '\n'.join(img_times)
+        ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
+
+
 
         plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time))
         plt.show()
