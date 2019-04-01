@@ -62,6 +62,10 @@ class Mango(object):
             t = np.argmin(np.abs(tstmp-tstmp0))
             truetime = dt.datetime.utcfromtimestamp(tstmp[t])
 
+            # raise error if the closest time is more than 5 minutes from targtime
+            if np.abs((targtime-truetime).total_seconds())>5.*60.:
+                raise ValueError
+
             img_array = file['ImageData'][t,:,:]
             lat = file['Latitude'][:]
             lon = file['Longitude'][:]

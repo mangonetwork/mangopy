@@ -69,12 +69,24 @@ class Mosaic(Mango):
             print(site['name'])
             # get data
             try:
-                img, lat, lon, __ = self.read_data(site,time)
+                img, lat, lon, truetime = self.read_data(site,time)
+                print(site['name'], truetime)
             except OSError as e:
                 print(e)
                 # truetime.append('')
                 grid_img.append(np.full(grid_shape,np.nan))
                 continue
+            except IOError as e:
+                print(e)
+                # truetime.append('')
+                grid_img.append(np.full(grid_shape,np.nan))
+                continue
+            except ValueError as e:
+                print(e)
+                # truetime.append('')
+                grid_img.append(np.full(grid_shape,np.nan))
+                continue
+                
 
             flat_img = img.ravel()
     
