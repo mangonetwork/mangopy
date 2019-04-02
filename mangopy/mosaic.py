@@ -150,15 +150,12 @@ class Mosaic(Mango):
 
         # create combined grid of all sites based on site hiarchy
         grid_shape = grid_lat.shape
-        combined_grid = np.empty(grid_shape)
-        for i in range(grid_shape[0]):
-            for j in range(grid_shape[1]):
-                v = np.nan
-                for k in range(len(self.site_list)):
-                    v = grid_img[int(hiarchy[k,i,j]),i,j]
-                    if np.isfinite(v):
-                        break
-                combined_grid[i,j] = v
+        combined_grid = np.full(grid_shape,np.nan)
+        J, I = np.meshgrid(np.arange(grid_shape[1]),np.arange(grid_shape[0]))
+        for lev in range(hiarchy.shape[0]):
+            nans = np.isnan(combined_grid)
+            combined_grid[nans] = grid_img[hiarchy[lev][nans].astype('int32'),I[nans],J[nans]]
+
 
         if edges:
             # edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
