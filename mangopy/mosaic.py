@@ -166,7 +166,7 @@ class Mosaic(Mango):
         else:
             return combined_grid, grid_lat, grid_lon
 
-    def plot_mosaic(self,time):
+    def plot_mosaic(self,time,dpi=300):
 
         # get background grid image and coordinates
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, edges=True)
@@ -193,7 +193,7 @@ class Mosaic(Mango):
 
 
 
-        plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time))
+        plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time), dpi=dpi)
         plt.show()
 
 
