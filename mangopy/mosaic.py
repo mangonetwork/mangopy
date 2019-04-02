@@ -34,12 +34,7 @@ class Mosaic(Mango):
         self.site_list = self.get_site_info(sites)
 
 
-    def generate_grid(self,time):
-
-        rewrite_file = False
-        regrid_file = 'regrid_image_index.h5'
-        if rewrite_file:
-            os.remove(regrid_file)
+    def generate_grid(self):
 
         # create base background grid
         # original images have the following approximate resolution:
@@ -58,10 +53,66 @@ class Mosaic(Mango):
 
         grid_lon, grid_lat = np.meshgrid(lon_arr,lat_arr)
         edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
-        grid_shape = grid_lon.shape
-        flat_grid = np.array([grid_lon.ravel(),grid_lat.ravel()]).T
 
-        # get data from each site and interpolate it to background grid
+        # return flat_grid
+        return np.array([grid_lon, grid_lat]), np.array([edge_lon, edge_lat])
+
+
+
+    def get_nearest_index(self,site,background_grid):
+
+        rewrite_file = False
+        regrid_file = 'regrid_image_index.h5'
+        if rewrite_file:
+            os.remove(regrid_file)
+
+        try:
+            with h5py.File(regrid_file,'r') as f:
+                nearest_idx = f[site['name']][:]
+        except:
+            
+            flat_grid = np.array([background_grid[0].ravel(),background_grid[1].ravel()]).T
+
+            # get site lat/lon arrays
+            __, lat, lon, __ = self.read_data(site,time)
+
+            flat_lat = lat.ravel()
+            flat_lon = lon.ravel()
+            flat_idx = np.arange(len(flat_lat))
+
+            flat_idx = flat_idx[np.isfinite(flat_lat)]
+            flat_lon = flat_lon[np.isfinite(flat_lat)]
+            flat_lat = flat_lat[np.isfinite(flat_lat)]
+            flat_points = np.array([flat_lon,flat_lat]).T
+
+            fov = flat_points[ConvexHull(flat_points).vertices].T
+            # print(fov)
+            center_lon = site['lon']
+            if center_lon<0:
+                center_lon += 360.
+            # find points west of site
+            fovW = fov[:,fov[0,:]<center_lon]
+            # find points east of site
+            fovE = fov[:,fov[0,:]>center_lon]
+            # find longitude limits for each latitude row in the grid
+            limits = []
+            for f in [fovW,fovE]:
+                f = f[:,np.argsort(f[1,:])]
+                limits.append(np.interp(lat_arr,f[1,:],f[0,:],left=np.nan,right=np.nan))
+            # create flag array identifying points in grid within fov
+            flags = np.all(np.array([lon_arr>=limits[0][:,None],lon_arr<=limits[1][:,None]]),axis=0)
+
+            # find index of image cell that is closest to each grid cell in the fov
+            nearest_idx = np.full(grid_shape,np.nan)
+            nearest_idx[flags] = interpolate.griddata(flat_points,flat_idx,flat_grid[flags.ravel()],method='nearest')
+
+            with h5py.File(regrid_file, 'a') as f:
+                f.create_dataset(site['name'], data=nearest_idx, compression='gzip', compression_opts=1)
+
+        return nearest_idx
+
+
+    def grid_mosaic(self,time,grid,hiarchy):
         grid_img = []
         truetime = []
         for site in self.site_list:
@@ -69,68 +120,21 @@ class Mosaic(Mango):
             print(site['name'])
             # get data
             try:
-                img, lat, lon, tt = self.read_data(site,time)
-                # print(site['name'], tt)
+                img, __, __, tt = self.read_data(site,time)
                 truetime.append(tt)
-            except OSError as e:
+            except (OSError, IOError, ValueError) as e:
                 print(e)
                 truetime.append('')
-                grid_img.append(np.full(grid_shape,np.nan))
+                grid_img.append(np.full(grid[0].shape,np.nan))
                 continue
-            except IOError as e:
-                print(e)
-                truetime.append('')
-                grid_img.append(np.full(grid_shape,np.nan))
-                continue
-            except ValueError as e:
-                print(e)
-                truetime.append('')
-                grid_img.append(np.full(grid_shape,np.nan))
-                continue
-
 
             flat_img = img.ravel()
-    
 
-            try:
-                with h5py.File(regrid_file,'r') as f:
-                    nearest_idx = f[site['name']][:]
-            except:
-                flat_lat = lat.ravel()
-                flat_lon = lon.ravel()
-                flat_idx = np.arange(len(flat_lat))
-
-                flat_idx = flat_idx[np.isfinite(flat_lat)]
-                flat_lon = flat_lon[np.isfinite(flat_lat)]
-                flat_lat = flat_lat[np.isfinite(flat_lat)]
-                flat_points = np.array([flat_lon,flat_lat]).T
-
-                fov = flat_points[ConvexHull(flat_points).vertices].T
-                # print(fov)
-                center_lon = site['lon']
-                if center_lon<0:
-                    center_lon += 360.
-                # find points west of site
-                fovW = fov[:,fov[0,:]<center_lon]
-                # find points east of site
-                fovE = fov[:,fov[0,:]>center_lon]
-                # find longitude limits for each latitude row in the grid
-                limits = []
-                for f in [fovW,fovE]:
-                    f = f[:,np.argsort(f[1,:])]
-                    limits.append(np.interp(lat_arr,f[1,:],f[0,:],left=np.nan,right=np.nan))
-                # create flag array identifying points in grid within fov
-                flags = np.all(np.array([lon_arr>=limits[0][:,None],lon_arr<=limits[1][:,None]]),axis=0)
-
-                # find index of image cell that is closest to each grid cell in the fov
-                nearest_idx = np.full(grid_shape,np.nan)
-                nearest_idx[flags] = interpolate.griddata(flat_points,flat_idx,flat_grid[flags.ravel()],method='nearest')
-
-                with h5py.File(regrid_file, 'a') as f:
-                    f.create_dataset(site['name'], data=nearest_idx, compression='gzip', compression_opts=1)
+            # get nearest neighbor interpolation idices for this site
+            nearest_idx = self.get_nearest_index(site,grid)  # nearest index is site specific
 
             # interpolate image to grid
-            img_interp = np.full(grid_shape,np.nan)
+            img_interp = np.full(grid[0].shape,np.nan)
             img_interp[np.isfinite(nearest_idx)] = flat_img[nearest_idx[np.isfinite(nearest_idx)].astype('int32')]
 
             # add interpolated image to the list of interpolated images from all sites
@@ -138,35 +142,42 @@ class Mosaic(Mango):
 
         grid_img = np.array(grid_img)
 
-        return grid_img, grid_lat, grid_lon, edge_lat, edge_lon, truetime
-
-
-    def create_mosaic(self,time,edges=False):
-
-        grid_img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.generate_grid(time)
-
-        # find site hiarchy for background grid
-        hiarchy = self.site_hiarchy(np.array([grid_lat,grid_lon]))
 
         # create combined grid of all sites based on site hiarchy
-        grid_shape = grid_lat.shape
+        grid_shape = grid[0].shape
         combined_grid = np.full(grid_shape,np.nan)
         J, I = np.meshgrid(np.arange(grid_shape[1]),np.arange(grid_shape[0]))
         for lev in range(hiarchy.shape[0]):
             nans = np.isnan(combined_grid)
             combined_grid[nans] = grid_img[hiarchy[lev][nans].astype('int32'),I[nans],J[nans]]
 
+        return combined_grid, truetime
 
-        if edges:
+
+
+    def create_mosaic(self,time,cell_edges=False):
+
+        # create background grid
+        grid, edges = self.generate_grid()
+
+        # find site hiarchy for background grid
+        hiarchy = self.site_hiarchy(grid)
+
+        # create mosaic of all sites on background grid
+        combined_grid, truetime = self.grid_mosaic(time,grid,hiarchy)
+
+
+        if cell_edges:
             # edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
-            return combined_grid, grid_lat, grid_lon, edge_lat, edge_lon, truetime
+            return combined_grid, grid[1], grid[0], edges[1], edges[0], truetime
         else:
-            return combined_grid, grid_lat, grid_lon
+            return combined_grid, grid[1], grid[0]
+
 
     def plot_mosaic(self,time,dpi=300):
 
         # get background grid image and coordinates
-        img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, edges=True)
+        img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, cell_edges=True)
 
         # set up map
         fig = plt.figure(figsize=(15,10))
@@ -199,7 +210,7 @@ class Mosaic(Mango):
         # calculate site hiarcy for common grid based on the distance of each point from each site
         grid_distance = []
         for site in self.site_list:
-            dist = self.haversine(site['lat'],site['lon'],grid_points[0],grid_points[1])
+            dist = self.haversine(site['lat'],site['lon'],grid_points[1],grid_points[0])
             grid_distance.append(dist)
         grid_distance = np.array(grid_distance)
 

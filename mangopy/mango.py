@@ -64,7 +64,7 @@ class Mango(object):
 
             # raise error if the closest time is more than 5 minutes from targtime
             if np.abs((targtime-truetime).total_seconds())>5.*60.:
-                raise ValueError
+                raise ValueError('Requested time {:%H:%M:%S} not included in {}'.format(targtime,filename))
 
             img_array = file['ImageData'][t,:,:]
             lat = file['Latitude'][:]
