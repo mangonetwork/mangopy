@@ -2,7 +2,8 @@ from mangopy.mango import Mango
 from mangopy.mosaic import Mosaic
 import datetime as dt
 
-time = dt.datetime(2017,5,28,5,30)
+time = dt.datetime(2017,5,28,5,55)
+date = dt.datetime(2017,5,28)
 
 # # plot single FoV
 # m = Mango()
@@ -11,4 +12,6 @@ time = dt.datetime(2017,5,28,5,30)
 
 # plot mosaic
 m = Mosaic()
-m.plot_mosaic(time)
+# m.plot_mosaic(time)
+# m.create_all_mosaic(date)
+m.create_mosaic_movie(date)

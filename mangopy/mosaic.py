@@ -58,6 +58,37 @@ class Mosaic(Mango):
         return np.array([grid_lon, grid_lat]), np.array([edge_lon, edge_lat])
 
 
+    def site_hiarchy(self,grid_points):
+        # calculate site hiarcy for common grid based on the distance of each point from each site
+        grid_distance = []
+        for site in self.site_list:
+            dist = self.haversine(site['lat'],site['lon'],grid_points[1],grid_points[0])
+            grid_distance.append(dist)
+        grid_distance = np.array(grid_distance)
+
+        hiarchy = np.argsort(grid_distance,axis=0)
+
+        return hiarchy
+
+
+    def haversine(self,lat0,lon0,lat,lon):
+        # calculates distance (in km) between two points on earth assuming spherical Earth
+
+        # convert decimal degrees to radians 
+        lon0 = lon0*np.pi/180.
+        lat0 = lat0*np.pi/180.
+        lon = lon*np.pi/180.
+        lat = lat*np.pi/180.
+
+        # Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
+        dlon = lon - lon0 
+        dlat = lat - lat0 
+        a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
+        c = 2 * np.arcsin(np.sqrt(a)) 
+        # Radius of earth in kilometers is 6371
+        km = 6371* c
+        return km
+
 
     def get_nearest_index(self,site,background_grid):
 
@@ -180,16 +211,16 @@ class Mosaic(Mango):
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, cell_edges=True)
 
         # set up map
-        fig = plt.figure(figsize=(15,10))
-        map_proj = ccrs.LambertConformal(central_longitude=-110.,central_latitude=40.0)
+        fig = plt.figure(figsize=(13,10))
+        map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
         ax.gridlines()
         ax.add_feature(cfeature.STATES)
-        ax.set_extent([225,300,25,50])
+        ax.set_extent([235,285,20,52])
 
         # plot image on map
-        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
+        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'), vmin=50, vmax=255, transform=ccrs.PlateCarree())
 
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
@@ -205,37 +236,66 @@ class Mosaic(Mango):
         plt.show()
 
 
+    def create_all_mosaic(self,date):
+        # create all mosaic images for a particular date
 
-    def site_hiarchy(self,grid_points):
-        # calculate site hiarcy for common grid based on the distance of each point from each site
-        grid_distance = []
-        for site in self.site_list:
-            dist = self.haversine(site['lat'],site['lon'],grid_points[1],grid_points[0])
-            grid_distance.append(dist)
-        grid_distance = np.array(grid_distance)
+        # create time list for night (images should be ~5 minutes appart)
+        # currently this is hard-coded to range from 2-11 UT on the date given
+        # Note - start and end times vary by season and should be determined by the data in some way
+        starttime = dt.datetime.combine(date,dt.time(2,0,0))
+        endtime = dt.datetime.combine(date,dt.time(11,0,0))
+        dtime = 5      # time between frames in minutes
+        num_frames = int((endtime-starttime).total_seconds()/60./dtime)+1
+        time_list = [starttime+dt.timedelta(minutes=i*dtime) for i in range(num_frames)]
 
-        hiarchy = np.argsort(grid_distance,axis=0)
+        # create save directory
+        savedir = 'mosaic_images_{:%b%d%y}'.format(date)
+        if not os.path.exists(savedir):
+            os.mkdir(savedir)
 
-        return hiarchy
+        # create background grid
+        grid, edges = self.generate_grid()
 
-    def haversine(self,lat0,lon0,lat,lon):
-        # calculates distance (in km) between two points on earth assuming spherical Earth
+        # find site hiarchy for background grid
+        hiarchy = self.site_hiarchy(grid)
 
-        # convert decimal degrees to radians 
-        lon0 = lon0*np.pi/180.
-        lat0 = lat0*np.pi/180.
-        lon = lon*np.pi/180.
-        lat = lat*np.pi/180.
+        for time in time_list:
+            print(time)
 
-        # Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
-        dlon = lon - lon0 
-        dlat = lat - lat0 
-        a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
-        c = 2 * np.arcsin(np.sqrt(a)) 
-        # Radius of earth in kilometers is 6371
-        km = 6371* c
-        return km
+            # create mosaic of all sites on background grid
+            mosaic, truetime = self.grid_mosaic(time,grid,hiarchy)
 
+            # set up map
+            fig = plt.figure(figsize=(13,10))
+            map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
+            ax = fig.add_subplot(111,projection=map_proj)
+            ax.coastlines()
+            ax.gridlines()
+            ax.add_feature(cfeature.STATES)
+            ax.set_extent([235,285,20,52])
+
+            # plot image on map
+            ax.pcolormesh(edges[0], edges[1], mosaic, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
+
+            # add target time as title of plot
+            ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
+
+            # print actual image times below plot
+            img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
+            img_times = '\n'.join(img_times)
+            ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
+
+            # save image
+            plt.savefig('{}/mosaic_{:%Y%m%d_%H%M}'.format(savedir,time), dpi=300)
+
+
+    def create_mosaic_movie(self,date):
+        # create *.png image files for the given date
+        self.create_all_mosaic(date)
+
+        # combine image files into mp4 using ffmpeg
+        ffmpeg_command = "ffmpeg -f image2 -r 5 -pattern_type glob -i 'mosaic_images_{:%b%d%y}/*.png' mosaic_movie_{:%b%d%y}.mp4".format(date,date)
+        os.system(ffmpeg_command)
 
 
 def main():
