@@ -90,7 +90,7 @@ class Mosaic(Mango):
         return km
 
 
-    def get_nearest_index(self,site,background_grid):
+    def get_nearest_index(self,site,background_grid,time):
 
         rewrite_file = False
         regrid_file = 'regrid_image_index.h5'
@@ -103,6 +103,8 @@ class Mosaic(Mango):
         except:
             
             flat_grid = np.array([background_grid[0].ravel(),background_grid[1].ravel()]).T
+            lon_arr = background_grid[0,0,:]
+            lat_arr = background_grid[1,:,0]
 
             # get site lat/lon arrays
             __, lat, lon, __ = self.read_data(site,time)
@@ -134,7 +136,7 @@ class Mosaic(Mango):
             flags = np.all(np.array([lon_arr>=limits[0][:,None],lon_arr<=limits[1][:,None]]),axis=0)
 
             # find index of image cell that is closest to each grid cell in the fov
-            nearest_idx = np.full(grid_shape,np.nan)
+            nearest_idx = np.full(background_grid[0].shape,np.nan)
             nearest_idx[flags] = interpolate.griddata(flat_points,flat_idx,flat_grid[flags.ravel()],method='nearest')
 
             with h5py.File(regrid_file, 'a') as f:
@@ -162,7 +164,7 @@ class Mosaic(Mango):
             flat_img = img.ravel()
 
             # get nearest neighbor interpolation idices for this site
-            nearest_idx = self.get_nearest_index(site,grid)  # nearest index is site specific
+            nearest_idx = self.get_nearest_index(site,grid,time)  # nearest index is site specific
 
             # interpolate image to grid
             img_interp = np.full(grid[0].shape,np.nan)
@@ -220,7 +222,7 @@ class Mosaic(Mango):
         ax.set_extent([235,285,20,52])
 
         # plot image on map
-        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'), vmin=50, vmax=255, transform=ccrs.PlateCarree())
+        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gray'), vmin=50, vmax=225, transform=ccrs.PlateCarree())
 
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
@@ -242,14 +244,14 @@ class Mosaic(Mango):
         # create time list for night (images should be ~5 minutes appart)
         # currently this is hard-coded to range from 2-11 UT on the date given
         # Note - start and end times vary by season and should be determined by the data in some way
-        starttime = dt.datetime.combine(date,dt.time(2,0,0))
-        endtime = dt.datetime.combine(date,dt.time(11,0,0))
+        starttime = dt.datetime.combine(date,dt.time(6,10,0))
+        endtime = dt.datetime.combine(date,dt.time(6,40,0))
         dtime = 5      # time between frames in minutes
         num_frames = int((endtime-starttime).total_seconds()/60./dtime)+1
         time_list = [starttime+dt.timedelta(minutes=i*dtime) for i in range(num_frames)]
 
         # create save directory
-        savedir = 'mosaic_images_{:%b%d%y}'.format(date)
+        savedir = 'mosaic_images_{:%b%d%y}_gray'.format(date)
         if not os.path.exists(savedir):
             os.mkdir(savedir)
 
@@ -275,7 +277,7 @@ class Mosaic(Mango):
             ax.set_extent([235,285,20,52])
 
             # plot image on map
-            ax.pcolormesh(edges[0], edges[1], mosaic, cmap=plt.get_cmap('gist_heat'),transform=ccrs.PlateCarree())
+            ax.pcolormesh(edges[0], edges[1], mosaic, cmap=plt.get_cmap('gray'),transform=ccrs.PlateCarree())
 
             # add target time as title of plot
             ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
@@ -291,7 +293,7 @@ class Mosaic(Mango):
 
     def create_mosaic_movie(self,date):
         # create *.png image files for the given date
-        self.create_all_mosaic(date)
+        # self.create_all_mosaic(date)
 
         # combine image files into mp4 using ffmpeg
         ffmpeg_command = "ffmpeg -f image2 -r 5 -pattern_type glob -i 'mosaic_images_{:%b%d%y}/*.png' mosaic_movie_{:%b%d%y}.mp4".format(date,date)
