@@ -93,7 +93,7 @@ class Mosaic(Mango):
     def get_nearest_index(self,site,background_grid,time):
 
         rewrite_file = False
-        regrid_file = 'regrid_image_index.h5'
+        regrid_file = os.path.join(self.mangopy_path,'regrid_image_index.h5')
         if rewrite_file:
             os.remove(regrid_file)
 

@@ -15,11 +15,12 @@ import os
 
 class Mango(object):
 
-    def __init__(self):
+    def __init__(self, datadir=None):
 
-        mangopy_path = os.path.dirname(__file__)[:-8]
-        self.sitefile = os.path.join(mangopy_path,'SiteInformation.csv')
-        self.datadir = os.path.join(mangopy_path,'MANGOData/')
+        self.mangopy_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        if datadir is None:
+            datadir = os.path.join(os.path.dirname(self.mangopy_path),'MANGOData')
+        self.datadir = datadir
 
 
     def plot(self,site,targtime):
@@ -54,7 +55,7 @@ class Mango(object):
         # read mango data file
         # self.datadir = datadir + '{}/'.format(self.site['name'])
 
-        filename = self.datadir + '{}/{}{:%b%d%y}.h5'.format(site['name'],site['code'],targtime)
+        filename = os.path.join(self.datadir,'{}/{}{:%b%d%y}.h5'.format(site['name'],site['code'],targtime))
 
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -130,8 +131,10 @@ class Mango(object):
 
     def get_site_info(self,sites):
         # create site list from the site file and user input
+        sitefile = os.path.join(self.mangopy_path,'SiteInformation.csv')
+
         site_list = []
-        with open(self.sitefile,'r') as f:
+        with open(sitefile,'r') as f:
             next(f)         # skip header line
             reader = csv.reader(f)
             for row in reader:
