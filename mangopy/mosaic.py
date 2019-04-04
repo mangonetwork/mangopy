@@ -222,7 +222,7 @@ class Mosaic(Mango):
         ax.set_extent([235,285,20,52])
 
         # plot image on map
-        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gray'), vmin=50, vmax=225, transform=ccrs.PlateCarree())
+        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'), vmin=50, vmax=225, transform=ccrs.PlateCarree())
 
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
