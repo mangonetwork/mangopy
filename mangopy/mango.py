@@ -53,10 +53,9 @@ class Mango(object):
 
     def read_data(self,site,targtime):
         # read mango data file
-        # self.datadir = datadir + '{}/'.format(self.site['name'])
 
         filename = os.path.join(self.datadir,'{}/{}{:%b%d%y}.h5'.format(site['name'],site['code'],targtime))
-
+        # filename = os.path.join(self.datadir,'{:%b%d%y}/{}{:%b%d%y}/Processed/Difference/{}{:%b%d%y}.h5'.format(targtime,site['code'],targtime,site['code'],targtime))
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
             tstmp = file['Time'][:]

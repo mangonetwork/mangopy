@@ -28,9 +28,9 @@ from .mango import Mango
 
 class Mosaic(Mango):
 
-    def __init__(self,sites='all'):
+    def __init__(self,sites='all',datadir=None):
 
-        super(Mosaic, self).__init__()
+        super(Mosaic, self).__init__(datadir=datadir)
         self.site_list = self.get_site_info(sites)
 
 
@@ -222,7 +222,7 @@ class Mosaic(Mango):
         ax.set_extent([235,285,20,52])
 
         # plot image on map
-        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_heat'), vmin=50, vmax=225, transform=ccrs.PlateCarree())
+        ax.pcolormesh(edge_lon, edge_lat, img, cmap=plt.get_cmap('gist_gray'), transform=ccrs.PlateCarree())
 
         # add target time as title of plot
         ax.set_title('{:%Y-%m-%d %H:%M}'.format(time))
@@ -244,8 +244,8 @@ class Mosaic(Mango):
         # create time list for night (images should be ~5 minutes appart)
         # currently this is hard-coded to range from 2-11 UT on the date given
         # Note - start and end times vary by season and should be determined by the data in some way
-        starttime = dt.datetime.combine(date,dt.time(6,10,0))
-        endtime = dt.datetime.combine(date,dt.time(6,40,0))
+        starttime = dt.datetime.combine(date,dt.time(2,0,0))
+        endtime = dt.datetime.combine(date,dt.time(11,0,0))
         dtime = 5      # time between frames in minutes
         num_frames = int((endtime-starttime).total_seconds()/60./dtime)+1
         time_list = [starttime+dt.timedelta(minutes=i*dtime) for i in range(num_frames)]
@@ -293,7 +293,7 @@ class Mosaic(Mango):
 
     def create_mosaic_movie(self,date):
         # create *.png image files for the given date
-        # self.create_all_mosaic(date)
+        self.create_all_mosaic(date)
 
         # combine image files into mp4 using ffmpeg
         ffmpeg_command = "ffmpeg -f image2 -r 5 -pattern_type glob -i 'mosaic_images_{:%b%d%y}/*.png' mosaic_movie_{:%b%d%y}.mp4".format(date,date)
