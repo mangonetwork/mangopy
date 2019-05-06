@@ -25,14 +25,14 @@ class Mango(object):
 
     def plot(self,site,targtime):
         # plot single mango image
-        img, __, __, truetime = self.read_data(site,targtime)
+        img, __, __, truetime = self.get_data(site,targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
 
     def map(self,site,targtime):
         # map single mango image
-        img, lat, lon, truetime = self.read_data(site,targtime)
+        img, lat, lon, truetime = self.get_data(site,targtime)
 
         # set up map
         fig = plt.figure()
@@ -51,11 +51,22 @@ class Mango(object):
 
         plt.show()
 
-    def read_data(self,site,targtime):
+    def get_data(self,site,targtime):
         # read mango data file
 
-        filename = os.path.join(self.datadir,'{}/{}{:%b%d%y}.h5'.format(site['name'],site['code'],targtime))
-        # filename = os.path.join(self.datadir,'{:%b%d%y}/{}{:%b%d%y}/Processed/Difference/{}{:%b%d%y}.h5'.format(targtime,site['code'],targtime,site['code'],targtime))
+        filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
+
+        print(filename)
+        try:
+            img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
+        except OSError:
+            self.fetch_datafile(site, targtime.date())
+            img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
+
+        return img_array, lat, lon, truetime
+
+
+    def read_datafile(self,filename,targtime):
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
             tstmp = file['Time'][:]
@@ -72,7 +83,7 @@ class Mango(object):
 
         return img_array, lat, lon, truetime
 
-    def fetch_data(self, site, date, save_directory=None):
+    def fetch_datafile(self, site, date, save_directory=None):
         # fetch mango data from online repository
         # Curtesy of AReimer's url_fetcher() function
         import os
@@ -83,12 +94,11 @@ class Mango(object):
         from contextlib import closing
 
         # form url
-        url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{}/{:%b%d%y}/{}{:%b%d%y}.h5'.format(self.site['name'],date,self.site['code'],date)
+        url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],date,site['code'])
 
         # make sure save directory exists
-        # self.datadir = datadir + '{}/'.format(self.site['name'])
         if not save_directory:
-            save_directory = self.datadir + '{}/'.format(site['name'])
+            save_directory = os.path.join(self.datadir,site['name'],'{:%b%d%y}'.format(date))
         try:
             os.mkdir(save_directory)
         except:
@@ -99,7 +109,7 @@ class Mango(object):
         filename = os.path.basename(url)
 
         output_filename = os.path.join(save_directory,filename)
-        # print(output_filename)
+        print(output_filename)
 
         # with closing(urllib2.urlopen(url)) as d:
         with closing(urlopen(url)) as d:

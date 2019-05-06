@@ -107,7 +107,7 @@ class Mosaic(Mango):
             lat_arr = background_grid[1,:,0]
 
             # get site lat/lon arrays
-            __, lat, lon, __ = self.read_data(site,time)
+            __, lat, lon, __ = self.get_data(site,time)
 
             flat_lat = lat.ravel()
             flat_lon = lon.ravel()
@@ -153,7 +153,7 @@ class Mosaic(Mango):
             print(site['name'])
             # get data
             try:
-                img, __, __, tt = self.read_data(site,time)
+                img, __, __, tt = self.get_data(site,time)
                 truetime.append(tt)
             except (OSError, IOError, ValueError) as e:
                 print(e)
