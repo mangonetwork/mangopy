@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
+import urllib
+from contextlib import closing
 
 
 class Mango(object):
@@ -53,12 +55,12 @@ class Mango(object):
 
     def get_data(self,site,targtime):
         # read mango data file
-
         filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
 
-        print(filename)
+        # first try to read data file locally
         try:
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
+        # if that fails, try to download, then read the data file
         except OSError:
             self.fetch_datafile(site, targtime.date())
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
@@ -86,12 +88,9 @@ class Mango(object):
     def fetch_datafile(self, site, date, save_directory=None):
         # fetch mango data from online repository
         # Curtesy of AReimer's url_fetcher() function
-        import os
+        # import os
         # NOTE: urllib2 does not work with python 3.  I've modified this so that it's python 3 complatible,
         #   but I havn't tested it with python 2. (2019-03-19 LL)
-        # import urllib2
-        from urllib.request import urlopen
-        from contextlib import closing
 
         # form url
         url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],date,site['code'])
@@ -101,41 +100,49 @@ class Mango(object):
             save_directory = os.path.join(self.datadir,site['name'],'{:%b%d%y}'.format(date))
         try:
             os.mkdir(save_directory)
-        except:
+        except FileExistsError:
             pass
 
-        # first check the file at the link and look/compare with archived.
-
+        # define filename and output filename
         filename = os.path.basename(url)
-
         output_filename = os.path.join(save_directory,filename)
-        print(output_filename)
 
-        # with closing(urllib2.urlopen(url)) as d:
-        with closing(urlopen(url)) as d:
-            url_size = int(d.info()['Content-Length'])
+        try:
+            # with closing(urllib2.urlopen(url)) as d:  # THIS IS A PYTHON2 REMINENT
+            with closing(urllib.request.urlopen(url)) as d:
+                url_size = int(d.info()['Content-Length'])
 
-            download = True
-            if os.path.exists(output_filename):
-                output_size = os.stat(output_filename).st_size
-                if output_size == url_size:
-                    print("    Already have file: %s" % filename)
-                    download = False
+                # if file already exists, return without downloading anything
+                if os.path.exists(output_filename):
+                    output_size = os.stat(output_filename).st_size
+                    if output_size == url_size:
+                        print('    Already have file: {}'.format(filename))
+                        return
 
-            if download:
+                # download file
                 with open(output_filename,'wb') as f:
                     f.write(d.read())
 
-        if download:
+        # if the requested URL doesn't exist, raise an error
+        except urllib.error.URLError:
+            download = False
+            raise ValueError('Requested URL does not exist! This probably means there is no data available for the date/site requested.')
+
+        # check to make sure download was completed sucessfully
+        else:
             output_size = os.stat(output_filename).st_size
-            if not output_size == url_size:
-                print("Problem downloading file from: %s" % url)
+            if output_size == url_size:
+                # if download sucessful, print success message
+                print('    Successfully downloaded: {}'.format(filename))
+            else:
+                # if download not sucessful, print failure message and raise error
+                print('    Problem downloading file from: {}'.format(url))
                 try:
                     os.remove(output_filename)
                 except Exception:
                     pass
-            else:
-                print("    Successfully downloaded: %s" % filename)
+                raise ValueError('Error downloading data!')
+
 
 
     def get_site_info(self,sites):
