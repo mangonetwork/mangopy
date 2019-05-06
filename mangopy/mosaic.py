@@ -14,7 +14,6 @@
 import numpy as np
 import tables
 import h5py
-# import csv
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -23,7 +22,6 @@ import os
 import datetime as dt
 from scipy.spatial import ConvexHull
 from .mango import Mango
-# from mango import mango
 
 
 class Mosaic(Mango):
