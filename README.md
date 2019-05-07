@@ -15,4 +15,7 @@ cd MANGO
 3. To install mangopy, run the following command.
 ```
 pip install .
-```  
+```
+
+For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy_tutorial.ipynb'.
+  
