@@ -2,6 +2,9 @@
 # Basic data and plotting utilities for MANGO network
 #
 # created 2019-3-19 by LLamarche
+# Notes:
+# - Default data directory is TEMP/MANGOData/, where TEMP is defined by tempfile.gettempdir() (https://docs.python.org/3/library/tempfile.html)
+# - TODO: Data files availabe at ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/
 
 import numpy as np
 import datetime as dt
@@ -13,6 +16,7 @@ import cartopy.feature as cfeature
 import os
 import urllib
 from contextlib import closing
+import tempfile
 
 
 class Mango(object):
@@ -20,8 +24,9 @@ class Mango(object):
     def __init__(self, datadir=None):
 
         self.mangopy_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        # if no data directory specified, use a default temp directory
         if datadir is None:
-            datadir = os.path.join(os.path.dirname(self.mangopy_path),'MANGOData')
+            datadir = os.path.join(tempfile.gettempdir(),'MANGOData')
         self.datadir = datadir
 
 
@@ -97,10 +102,13 @@ class Mango(object):
 
         # make sure save directory exists
         if not save_directory:
+            # define file directory path for this date
             save_directory = os.path.join(self.datadir,site['name'],'{:%b%d%y}'.format(date))
         try:
-            os.mkdir(save_directory)
+            # try and create directory path for this date
+            os.makedirs(save_directory)
         except FileExistsError:
+            # if directory already exists, don't do anything
             pass
 
         # define filename and output filename

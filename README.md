@@ -17,5 +17,5 @@ cd MANGO
 pip install .
 ```
 
-For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy_tutorial.ipynb'.
+For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy_tutorial.ipynb`.
   

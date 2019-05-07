@@ -2,9 +2,6 @@
 # create mosaic plot from multiple MANGO sites
 # 
 # created 2019-03-13 by LLamarche
-# - SiteInfomation.csv must be in the running directory
-#    and data files are in ./MANGOData/<site>
-#   - adjust these in mango.py __init__()
 # - site regridding is stored in regrid_image_index.h5
 #   - this file can be removed, but it will be recreated
 #     every time the program is run
