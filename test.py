@@ -1,13 +1,13 @@
 import mangopy as mango
 import datetime as dt
 
-# time = dt.datetime(2017,5,5,6,25)
-time = dt.datetime(2015,8,24,6,25)
+time = dt.datetime(2017,5,5,6,25)
+# time = dt.datetime(2016,8,1,5,3)
 # date = dt.datetime(2017,6,10)
 
 # plot single FoV
 m = mango.Mango()
-site = m.get_site_info('Capitol Reef Field Station')
+site = m.get_site_info('Madison')
 m.plot(site,time)
 m.map(site,time)
 
