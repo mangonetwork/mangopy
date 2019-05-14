@@ -9,7 +9,6 @@
 
 
 import numpy as np
-import tables
 import h5py
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs

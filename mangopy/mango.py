@@ -23,7 +23,7 @@ class Mango(object):
 
     def __init__(self, datadir=None):
 
-        self.mangopy_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        self.mangopy_path = os.path.dirname(os.path.realpath(__file__))
         # if no data directory specified, use a default temp directory
         if datadir is None:
             datadir = os.path.join(tempfile.gettempdir(),'MANGOData')
