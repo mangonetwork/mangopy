@@ -27,6 +27,7 @@ class Mango(object):
         # if no data directory specified, use a default temp directory
         if datadir is None:
             datadir = os.path.join(tempfile.gettempdir(),'MANGOData')
+            print('No data directory has been specified!  If data is downloaded, it will be saved to {}.  This is also where mangopy will look for existing data files.'.format(datadir))
         self.datadir = datadir
 
 
@@ -67,6 +68,7 @@ class Mango(object):
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
         # if that fails, try to download, then read the data file
         except OSError:
+            print('Attempting to download {0}{1:%b%d%y}.h5 from FTP server.'.format(site['code'],targtime))
             self.fetch_datafile(site, targtime.date())
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
 
@@ -134,7 +136,7 @@ class Mango(object):
         # if the requested URL doesn't exist, raise an error
         except urllib.error.URLError:
             download = False
-            raise ValueError('Requested URL does not exist! This probably means there is no data available for the date/site requested.')
+            raise ValueError('No data available for {} on {}.'.format(site['name'],date))
 
         # check to make sure download was completed sucessfully
         else:

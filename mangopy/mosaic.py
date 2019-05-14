@@ -53,7 +53,7 @@ class Mosaic(Mango):
         return np.array([grid_lon, grid_lat]), np.array([edge_lon, edge_lat])
 
 
-    def site_hiarchy(self,grid_points):
+    def site_hierarchy(self,grid_points):
         # calculate site hiarcy for common grid based on the distance of each point from each site
         grid_distance = []
         for site in self.site_list:
@@ -61,9 +61,9 @@ class Mosaic(Mango):
             grid_distance.append(dist)
         grid_distance = np.array(grid_distance)
 
-        hiarchy = np.argsort(grid_distance,axis=0)
+        hierarchy = np.argsort(grid_distance,axis=0)
 
-        return hiarchy
+        return hierarchy
 
 
     def haversine(self,lat0,lon0,lat,lon):
@@ -140,18 +140,17 @@ class Mosaic(Mango):
         return nearest_idx
 
 
-    def grid_mosaic(self,time,grid,hiarchy):
+    def grid_mosaic(self,time,grid,hierarchy):
         grid_img = []
         truetime = []
         for site in self.site_list:
 
-            print(site['name'])
             # get data
             try:
                 img, __, __, tt = self.get_data(site,time)
                 truetime.append(tt)
             except (OSError, IOError, ValueError) as e:
-                print(e)
+                print('Exception: {}'.format(str(e)))
                 truetime.append('')
                 grid_img.append(np.full(grid[0].shape,np.nan))
                 continue
@@ -171,13 +170,13 @@ class Mosaic(Mango):
         grid_img = np.array(grid_img)
 
 
-        # create combined grid of all sites based on site hiarchy
+        # create combined grid of all sites based on site hierarchy
         grid_shape = grid[0].shape
         combined_grid = np.full(grid_shape,np.nan)
         J, I = np.meshgrid(np.arange(grid_shape[1]),np.arange(grid_shape[0]))
-        for lev in range(hiarchy.shape[0]):
+        for lev in range(hierarchy.shape[0]):
             nans = np.isnan(combined_grid)
-            combined_grid[nans] = grid_img[hiarchy[lev][nans].astype('int32'),I[nans],J[nans]]
+            combined_grid[nans] = grid_img[hierarchy[lev][nans].astype('int32'),I[nans],J[nans]]
 
         return combined_grid, truetime
 
@@ -188,11 +187,11 @@ class Mosaic(Mango):
         # create background grid
         grid, edges = self.generate_grid()
 
-        # find site hiarchy for background grid
-        hiarchy = self.site_hiarchy(grid)
+        # find site hierarchy for background grid
+        hierarchy = self.site_hierarchy(grid)
 
         # create mosaic of all sites on background grid
-        combined_grid, truetime = self.grid_mosaic(time,grid,hiarchy)
+        combined_grid, truetime = self.grid_mosaic(time,grid,hierarchy)
 
 
         if cell_edges:
@@ -253,14 +252,14 @@ class Mosaic(Mango):
         # create background grid
         grid, edges = self.generate_grid()
 
-        # find site hiarchy for background grid
-        hiarchy = self.site_hiarchy(grid)
+        # find site hierarchy for background grid
+        hierarchy = self.site_hierarchy(grid)
 
         for time in time_list:
             print(time)
 
             # create mosaic of all sites on background grid
-            mosaic, truetime = self.grid_mosaic(time,grid,hiarchy)
+            mosaic, truetime = self.grid_mosaic(time,grid,hierarchy)
 
             # set up map
             fig = plt.figure(figsize=(13,10))

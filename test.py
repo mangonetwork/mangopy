@@ -1,8 +1,8 @@
 import mangopy as mango
 import datetime as dt
 
-time = dt.datetime(2017,5,5,6,25)
-# time = dt.datetime(2016,8,1,5,3)
+# time = dt.datetime(2017,5,5,6,25)
+time = dt.datetime(2016,8,2,5,3)
 # date = dt.datetime(2017,6,10)
 
 # plot single FoV
