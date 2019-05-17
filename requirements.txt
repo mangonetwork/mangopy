@@ -1,5 +1,5 @@
 numpy >= 1.16
 h5py >= 2.9
-matplotlib >= 3.0
+matplotlib >= 2.2.4
 cartopy >= 0.17
 scipy >= 1.2

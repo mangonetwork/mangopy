@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
-import urllib
-from contextlib import closing
+# import urllib
+# from contextlib import closing
 import tempfile
+import ftplib
 
 
 class Mango(object):
@@ -67,8 +68,8 @@ class Mango(object):
         try:
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
         # if that fails, try to download, then read the data file
-        except OSError:
-            print('Attempting to download {0}{1:%b%d%y}.h5 from FTP server.'.format(site['code'],targtime))
+        except (OSError, IOError):
+            print('Attempting to download {} from FTP server.'.format(os.path.basename(filename)))
             self.fetch_datafile(site, targtime.date())
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
 
@@ -84,7 +85,7 @@ class Mango(object):
 
             # raise error if the closest time is more than 5 minutes from targtime
             if np.abs((targtime-truetime).total_seconds())>5.*60.:
-                raise ValueError('Requested time {:%H:%M:%S} not included in {}'.format(targtime,filename))
+                raise ValueError('Requested time {:%H:%M:%S} not included in {}'.format(targtime,os.path.basename(filename)))
 
             img_array = file['ImageData'][t,:,:]
             lat = file['Latitude'][:]
@@ -95,63 +96,56 @@ class Mango(object):
     def fetch_datafile(self, site, date, save_directory=None):
         # fetch mango data from online repository
         # Curtesy of AReimer's url_fetcher() function
-        # import os
-        # NOTE: urllib2 does not work with python 3.  I've modified this so that it's python 3 complatible,
-        #   but I havn't tested it with python 2. (2019-03-19 LL)
-
-        # form url
-        url = 'ftp://isr.sri.com/pub/earthcube/provider/asti/MANGOProcessed/{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],date,site['code'])
 
         # make sure save directory exists
         if not save_directory:
             # define file directory path for this date
             save_directory = os.path.join(self.datadir,site['name'],'{:%b%d%y}'.format(date))
+
+
         try:
             # try and create directory path for this date
             os.makedirs(save_directory)
-        except FileExistsError:
+            directory_created = True
+        except:
+        # Note: this should specify an exception, but python 2 throws OSError and python 3 throws FileExistsError,
+        #       which does not exiist in python 2
             # if directory already exists, don't do anything
+            directory_created = False
             pass
 
         # define filename and output filename
-        filename = os.path.basename(url)
+        filename = '{0}{1:%b%d%y}.h5'.format(site['code'],date)
         output_filename = os.path.join(save_directory,filename)
 
+        # if file already exists, return without downloading anything
+        if os.path.exists(output_filename):
+            print('Already have datafile {}'.format(output_filename))
+            return
+
+        # connect to ftp server
+        ftp = ftplib.FTP('isr.sri.com')
+        ftp.login()
+        ftp_path = '/pub/earthcube/provider/asti/MANGOProcessed/{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],date,site['code'])
+
         try:
-            # with closing(urllib2.urlopen(url)) as d:  # THIS IS A PYTHON2 REMINENT
-            with closing(urllib.request.urlopen(url)) as d:
-                url_size = int(d.info()['Content-Length'])
-
-                # if file already exists, return without downloading anything
-                if os.path.exists(output_filename):
-                    output_size = os.stat(output_filename).st_size
-                    if output_size == url_size:
-                        print('    Already have file: {}'.format(filename))
-                        return
-
-                # download file
-                with open(output_filename,'wb') as f:
-                    f.write(d.read())
-
-        # if the requested URL doesn't exist, raise an error
-        except urllib.error.URLError:
-            download = False
+            # try to download file from ftp server
+            with open(output_filename, 'wb') as f:
+                ftp.retrbinary('RETR {}'.format(ftp_path), f.write)
+            # check to make sure file was sucessfully downloaded
+            if os.path.getsize(output_filename) == ftp.size(ftp_path):
+                print('Sucessfully downloaded {}'.format(filename))
+            else:
+                raise ValueError('Problem downloading {}'.format(filename))
+        except ftplib.error_perm:
+            # if file does not exist, delete empty file and directory that were created and raise error
+            os.remove(output_filename)
+            if directory_created:
+                os.rmdir(save_directory)
             raise ValueError('No data available for {} on {}.'.format(site['name'],date))
 
-        # check to make sure download was completed sucessfully
-        else:
-            output_size = os.stat(output_filename).st_size
-            if output_size == url_size:
-                # if download sucessful, print success message
-                print('    Successfully downloaded: {}'.format(filename))
-            else:
-                # if download not sucessful, print failure message and raise error
-                print('    Problem downloading file from: {}'.format(url))
-                try:
-                    os.remove(output_filename)
-                except Exception:
-                    pass
-                raise ValueError('Error downloading data!')
+        ftp.quit()
+
 
 
 
