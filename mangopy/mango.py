@@ -18,6 +18,7 @@ import os
 # from contextlib import closing
 import tempfile
 import ftplib
+from future.utils import raise_from
 
 
 class Mango(object):
@@ -136,13 +137,13 @@ class Mango(object):
             if os.path.getsize(output_filename) == ftp.size(ftp_path):
                 print('Sucessfully downloaded {}'.format(filename))
             else:
-                raise ValueError('Problem downloading {}'.format(filename))
+                raise_from(ValueError('Problem downloading {}'.format(filename)), None)
         except ftplib.error_perm:
             # if file does not exist, delete empty file and directory that were created and raise error
             os.remove(output_filename)
             if directory_created:
                 os.rmdir(save_directory)
-            raise ValueError('No data available for {} on {}.'.format(site['name'],date))
+            raise_from(ValueError('No data available for {} on {}.'.format(site['name'],date)), None)
 
         ftp.quit()
 

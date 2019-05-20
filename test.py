@@ -7,7 +7,7 @@ time = dt.datetime(2016,8,8,6,30)
 
 # plot single FoV
 m = mango.Mango()
-site = m.get_site_info('Madison')
+site = m.get_site_info('Eastern Iowa Observatory')
 # m.fetch_datafile(site,time.date())
 m.plot(site,time)
 m.map(site,time)
