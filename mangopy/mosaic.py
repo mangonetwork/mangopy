@@ -210,7 +210,7 @@ class Mosaic(Mango):
         map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
-        ax.gridlines()
+        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True)
         ax.add_feature(cfeature.STATES)
         ax.set_extent([235,285,20,52])
 
