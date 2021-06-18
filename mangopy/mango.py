@@ -24,6 +24,13 @@ from future.utils import raise_from
 class Mango(object):
 
     def __init__(self, datadir=None):
+        
+        """
+        Initializes MANGO object.
+        Parameters: Data Directory - path to existing directory.
+        Returns: None.
+        
+        """
 
         self.mangopy_path = os.path.dirname(os.path.realpath(__file__))
         # if no data directory specified, use a default temp directory
@@ -34,6 +41,13 @@ class Mango(object):
 
 
     def plot(self,site,targtime):
+        
+        """
+        Plots a single MANGO image.
+        Parameters: Site of image, time image was taken.
+        Returns: None.
+        
+        """
         # plot single mango image
         img, __, __, truetime = self.get_data(site,targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
@@ -41,6 +55,13 @@ class Mango(object):
         plt.show()
 
     def map(self,site,targtime):
+        
+        """
+        Plots a single MANGO image on the map.
+        Parameters: Site of image, time image was taken.
+        Returns: None.
+
+        """
         # map single mango image
         img, lat, lon, truetime = self.get_data(site,targtime)
 
@@ -49,7 +70,7 @@ class Mango(object):
         map_proj = ccrs.LambertConformal(central_longitude=np.nanmean(lon),central_latitude=np.nanmean(lat))
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
-        ax.gridlines()
+        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
         ax.add_feature(cfeature.STATES)
         ax.set_extent([np.nanmin(lon),np.nanmax(lon),np.nanmin(lat),np.nanmax(lat)])
 
@@ -62,6 +83,13 @@ class Mango(object):
         plt.show()
 
     def get_data(self,site,targtime):
+        
+        """
+        Accesses the images and position of a site, given the site name and time.
+        Parameters: Site name, and time images were taken.
+        Returns: Image array, latitude and longitude of site and time (?)
+        
+        """
         # read mango data file
         filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
 
@@ -78,6 +106,11 @@ class Mango(object):
 
 
     def read_datafile(self,filename,targtime):
+        """
+        Helper function for getting data; reads data in from h5py file.
+        Parameters: h5py filename, time images were taken.
+        Returns: Image array, latitude and longitude of site and time (?)
+        """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
             tstmp = file['Time'][:]
@@ -95,8 +128,12 @@ class Mango(object):
         return img_array, lat, lon, truetime
 
     def fetch_datafile(self, site, date, save_directory=None):
-        # fetch mango data from online repository
-        # Curtesy of AReimer's url_fetcher() function
+        """
+        Fetches mango data from online repository.
+        #Curtesy of AReimer's url_fetcher() function
+        
+        Parameters: Site name, date and directory where files will be saved.
+        Returns: None."""
 
         # make sure save directory exists
         if not save_directory:
@@ -151,6 +188,12 @@ class Mango(object):
 
 
     def get_site_info(self,sites):
+        
+        """
+        Obtains information about sites given as user input
+        Parameters: List of sites
+        Returns: List of dictionaries obtaining information about specified sites.
+        """
         # create site list from the site file and user input
         sitefile = os.path.join(self.mangopy_path,'SiteInformation.csv')
 

@@ -200,7 +200,7 @@ class Mosaic(Mango):
             return combined_grid, grid[1], grid[0]
 
 
-    def plot_mosaic(self,time,dpi=300):
+    def plot_mosaic(self,time,dpi=300,saveFig = False):
 
         # get background grid image and coordinates
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, cell_edges=True)
@@ -210,7 +210,7 @@ class Mosaic(Mango):
         map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
-        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True)
+        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
         ax.add_feature(cfeature.STATES)
         ax.set_extent([235,285,20,52])
 
@@ -224,10 +224,8 @@ class Mosaic(Mango):
         img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
         img_times = '\n'.join(img_times)
         ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
-
-
-
-        plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time), dpi=dpi)
+        if saveFig:
+            plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time), dpi=dpi)
         plt.show()
 
 
@@ -265,7 +263,7 @@ class Mosaic(Mango):
             map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
             ax = fig.add_subplot(111,projection=map_proj)
             ax.coastlines()
-            ax.gridlines()
+            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)            
             ax.add_feature(cfeature.STATES)
             ax.set_extent([235,285,20,52])
 
