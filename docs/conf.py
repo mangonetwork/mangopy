@@ -17,6 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
+# The master toctree document.
+master_doc = 'index'
+
 project = 'mangopy'
 copyright = '2021, A. Bhatt'
 author = 'A. Bhatt'
