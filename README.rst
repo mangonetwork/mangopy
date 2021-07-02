@@ -19,19 +19,19 @@ Installing for development
 ==========================
 If you would would like to clone the mangopy repo so you can modify the source code, follow the following instructions:
 
-1. Clone the mangopy git repo.::
+1. Clone the mangopy git repo::
 
   git clone https://github.com/mangonetwork/mangopy.git
 
-2. Change directories into the mangopy directory.::
+2. Change directories into the mangopy directory::
 
   cd mangopy
 
-3. To install in development mode, run the following command.::
+3. To install in development mode, run the following command::
 
   pip install -e .
 
 
 The mangopy developers encourage community contributions!  Please create a `pull request <https://github.com/mangonetwork/mangopy/pulls>`_ if you've fixed a problem or created a new feature that would be useful to the community!
 
-For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy tutorial <https://github.com/astib/MANGO/blob/master/mangopy_tutorial.ipynb>`_
+For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy tutorial <https://github.com/astib/MANGO/blob/master/mangopy_tutorial.ipynb>`_.
