@@ -2,7 +2,7 @@ Usage
 =====
 
 Mango
-=====
+-----
 
 First, import the Mango class::
 
@@ -30,7 +30,7 @@ To show the site on a map::
 
 
 Mosaic
-======
+------
 
 Now, import the Mosaic class::
 
