@@ -26,7 +26,7 @@ To specify a particular time and view an image, import datetime, and set a datet
 
 To show the site on a map::
 
-	mango_object.map(site,time_obj)
+	mango_object.map(site, time_obj)
 
 
 Mosaic
@@ -37,9 +37,8 @@ Now, import the Mosaic class::
 	from mangopy import Mosaic
 
 
-Here's how you can instantiate the Mosaic class. By default, all sites will appear on the Mosaic, but you can specify a list of sites using the sites keyword.
+Here's how you can instantiate the Mosaic class. By default, all sites will appear on the Mosaic, but you can specify a list of sites using the sites keyword. For all sites::
 
-For all sites::
 	mosaic_all_sites = Mosaic()
 
 To visualize a mosaic of Capitol Reef Field Station and Bridger alone::
@@ -49,3 +48,5 @@ To visualize a mosaic of Capitol Reef Field Station and Bridger alone::
 To plot the mosaic for all sites at the time specifed::
 
 	mosaic_all_sites.plot_mosaic(time_obj)
+
+If you prefer working with Jupyter Notebooks, here is the same `tutorial <https://github.com/mangonetwork/mangopy/blob/master/mangopy_tutorial.ipynb>`_, with an additional 'Accessing Data' example available on Jupyter Notebooks.
