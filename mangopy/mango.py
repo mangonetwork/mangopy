@@ -23,7 +23,7 @@ from future.utils import raise_from
 
 class Mango(object):
 
-    def __init__(self, datadir=None):
+    def __init__(self, datadir=None, download_data = False):
         
         """
         Initializes MANGO object.
@@ -38,6 +38,7 @@ class Mango(object):
             datadir = os.path.join(tempfile.gettempdir(),'MANGOData')
             print('No data directory has been specified!  If data is downloaded, it will be saved to {}.  This is also where mangopy will look for existing data files.'.format(datadir))
         self.datadir = datadir
+        self.download_data = download_data
 
 
     def plot(self,site,targtime):
@@ -49,7 +50,7 @@ class Mango(object):
         
         """
         # plot single mango image
-        img, __, __, truetime = self.get_data(site,targtime)
+        img, __, __, truetime = self.get_data(site, targtime, self.download_data)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
@@ -82,12 +83,12 @@ class Mango(object):
 
         plt.show()
 
-    def get_data(self,site,targtime):
+    def get_data(self,site,targtime,download_data):
         
         """
         Accesses the images and position of a site, given the site name and time.
         Parameters: Site name, and time images were taken.
-        Returns: Image array, latitude and longitude of site and time (?)
+        Returns: Image array, latitude and longitude of site and time.
         
         """
         # read mango data file
@@ -98,9 +99,12 @@ class Mango(object):
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
         # if that fails, try to download, then read the data file
         except (OSError, IOError):
-            print('Attempting to download {} from FTP server.'.format(os.path.basename(filename)))
-            self.fetch_datafile(site, targtime.date())
-            img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
+            if self.download_data:
+                print('Attempting to download {} from FTP server.'.format(os.path.basename(filename)))
+                self.fetch_datafile(site, targtime.date())
+                img_array, lat, lon, truetime = self.read_datafile(filename, targtime)
+            else:
+                print('No data found locally, unable to access FTP server upon user request.')
 
         return img_array, lat, lon, truetime
 
@@ -109,7 +113,7 @@ class Mango(object):
         """
         Helper function for getting data; reads data in from h5py file.
         Parameters: h5py filename, time images were taken.
-        Returns: Image array, latitude and longitude of site and time (?)
+        Returns: Image array, latitude and longitude of site and time.
         """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -130,10 +134,11 @@ class Mango(object):
     def fetch_datafile(self, site, date, save_directory=None):
         """
         Fetches mango data from online repository.
-        #Curtesy of AReimer's url_fetcher() function
+        Curtesy of AReimer's url_fetcher() function.
         
         Parameters: Site name, date and directory where files will be saved.
-        Returns: None."""
+        Returns: None.
+        """
 
         # make sure save directory exists
         if not save_directory:
