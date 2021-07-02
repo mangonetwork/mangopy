@@ -1,5 +1,5 @@
 Installation
-===========
+============
 
 Installing cartopy
 ------------------
@@ -16,14 +16,14 @@ Installing for development
 --------------------------
 If you would would like to clone the mangopy repo so you can modify the source code, follow the following instructions:
 
-1. Clone the mangopy git repo::
+Clone the mangopy git repo::
 
   git clone https://github.com/mangonetwork/mangopy.git
 
-2. Change directories into the mangopy directory::
+Change directories into the mangopy directory::
 
   cd mangopy
 
-3. To install in development mode, run the following command::
+To install in development mode, run the following command::
 
   pip install -e .
