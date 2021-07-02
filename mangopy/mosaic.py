@@ -1,6 +1,6 @@
 # mosaic.py
 # create mosaic plot from multiple MANGO sites
-# 
+#
 # created 2019-03-13 by LLamarche
 # - site regridding is stored in regrid_image_index.h5
 #   - this file can be removed, but it will be recreated
@@ -22,9 +22,9 @@ from .mango import Mango
 
 class Mosaic(Mango):
 
-    def __init__(self,sites='all',datadir=None):
+    def __init__(self,sites='all',datadir=None, download_data=False):
 
-        super(Mosaic, self).__init__(datadir=datadir)
+        super(Mosaic, self).__init__(datadir=datadir, download_data=download_data)
         self.site_list = self.get_site_info(sites)
 
 
@@ -68,17 +68,17 @@ class Mosaic(Mango):
     def haversine(self,lat0,lon0,lat,lon):
         # calculates distance (in km) between two points on earth assuming spherical Earth
 
-        # convert decimal degrees to radians 
+        # convert decimal degrees to radians
         lon0 = lon0*np.pi/180.
         lat0 = lat0*np.pi/180.
         lon = lon*np.pi/180.
         lat = lat*np.pi/180.
 
         # Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
-        dlon = lon - lon0 
-        dlat = lat - lat0 
+        dlon = lon - lon0
+        dlat = lat - lat0
         a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
-        c = 2 * np.arcsin(np.sqrt(a)) 
+        c = 2 * np.arcsin(np.sqrt(a))
         # Radius of earth in kilometers is 6371
         km = 6371* c
         return km
@@ -95,7 +95,7 @@ class Mosaic(Mango):
             with h5py.File(regrid_file,'r') as f:
                 nearest_idx = f[site['name']][:]
         except:
-            
+
             flat_grid = np.array([background_grid[0].ravel(),background_grid[1].ravel()]).T
             lon_arr = background_grid[0,0,:]
             lat_arr = background_grid[1,:,0]
@@ -263,7 +263,7 @@ class Mosaic(Mango):
             map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
             ax = fig.add_subplot(111,projection=map_proj)
             ax.coastlines()
-            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)            
+            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
             ax.add_feature(cfeature.STATES)
             ax.set_extent([235,285,20,52])
 
