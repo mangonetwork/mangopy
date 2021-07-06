@@ -8,7 +8,7 @@ REQUIREMENTS = [
 ]
 
 setup(name='mangopy',
-      version='0.0.1',
+      version='0.0.2',
       description='Software for MANGO ASI network',
       author = 'P. Venkatraman, L. Lamarche, A. Bhatt',
       license='GPLv3',
