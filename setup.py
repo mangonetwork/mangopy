@@ -1,11 +1,6 @@
 from setuptools import setup
 import os
 
-# # Get the package requirements
-# REQSFILE = os.path.join(os.path.dirname(__file__), 'requirements.txt')
-# with open(REQSFILE, 'r') as f:
-#     REQUIREMENTS = f.readlines()
-# REQUIREMENTS = '\n'.join(REQUIREMENTS)
 REQUIREMENTS = [
     'scipy >= 1.2',
     'h5py >= 2.9',
