@@ -7,8 +7,8 @@ REQUIREMENTS = [
     'matplotlib >= 2.2.4'
 ]
 
-setup(name='mangopy_test',
-      version='0.2',
+setup(name='mangopy',
+      version='0.0.1',
       description='Software for MANGO ASI network',
       author = 'P. Venkatraman, L. Lamarche, A. Bhatt',
       license='GPLv3',
