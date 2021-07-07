@@ -1,6 +1,6 @@
 # mosaic.py
 # create mosaic plot from multiple MANGO sites
-# 
+#
 # created 2019-03-13 by LLamarche
 # - site regridding is stored in regrid_image_index.h5
 #   - this file can be removed, but it will be recreated
@@ -11,8 +11,11 @@
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+try:
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+except ImportError:
+    print('WARNING: cartopy is not installed')
 from scipy import interpolate
 import os
 import datetime as dt
@@ -26,11 +29,11 @@ class Mosaic(Mango):
 
         """
         Initializes Mosaic object; inherits from Mango class.
-        Parameters: 
+        Parameters:
             sites (Optional) - sites to be plotted as mosaic on map.
             datadir (Optional) - Path to exisiting directory containing MANGO data.
         Returns: None.
-        
+
         """
 
         super(Mosaic, self).__init__(datadir=datadir)
@@ -67,7 +70,7 @@ class Mosaic(Mango):
     def site_hierarchy(self,grid_points):
         """
         Calculates site hierarchy for common grid based on the distance of each point from each site.
-        Parameters: 
+        Parameters:
             grid_points - coordinate points of base background grid.
         Returns: Hierarchy, 1D array.
         """
@@ -91,17 +94,17 @@ class Mosaic(Mango):
         Returns: Haversine distance in kilometers.
 
         """
-        #convert decimal degrees to radians 
+        #convert decimal degrees to radians
         lon0 = lon0*np.pi/180
         lat0 = lat0*np.pi/180
         lon = lon*np.pi/180
         lat = lat*np.pi/180
 
         #source: Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
-        dlon = lon - lon0 
-        dlat = lat - lat0 
+        dlon = lon - lon0
+        dlat = lat - lat0
         a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
-        c = 2 * np.arcsin(np.sqrt(a)) 
+        c = 2 * np.arcsin(np.sqrt(a))
 
         # Radius of earth in kilometers is 6371
         km = 6371* c
@@ -117,7 +120,7 @@ class Mosaic(Mango):
             time - Time of image as requested by user.
         Returns: Nearest index of each image cell closest to grid cell.
         """
-        
+
         rewrite_file = False
         regrid_file = os.path.join(self.mangopy_path,'regrid_image_index.h5')
         if rewrite_file:
@@ -127,7 +130,7 @@ class Mosaic(Mango):
             with h5py.File(regrid_file,'r') as f:
                 nearest_idx = f[site['name']][:]
         except:
-            
+
             flat_grid = np.array([background_grid[0].ravel(),background_grid[1].ravel()]).T
             lon_arr = background_grid[0,0,:]
             lat_arr = background_grid[1,:,0]
@@ -293,7 +296,7 @@ class Mosaic(Mango):
         Parameters:
             date - Date for which mosaic is created.
         '''
-        # 
+        #
 
         # create time list for night (images should be ~5 minutes apart)
         # currently this is hard-coded to range from 2-11 UT on the date given
@@ -326,7 +329,7 @@ class Mosaic(Mango):
             map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
             ax = fig.add_subplot(111,projection=map_proj)
             ax.coastlines()
-            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)            
+            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
             ax.add_feature(cfeature.STATES)
             ax.set_extent([235,285,20,52])
 
