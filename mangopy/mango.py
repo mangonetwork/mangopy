@@ -27,7 +27,9 @@ class Mango(object):
         
         """
         Initializes MANGO object.
-        Parameters: Data Directory - path to existing directory.
+        Parameters: 
+            datadir (Optional) - Path to exisiting directory containing MANGO data.
+            download_data (Optional) - Specifies whether the data should be downloaded from ftp server, if not found locally.
         Returns: None.
         
         """
@@ -45,12 +47,14 @@ class Mango(object):
         
         """
         Plots a single MANGO image.
-        Parameters: Site of image, time image was taken.
+        Parameters: 
+                site - Site of image.
+                targtime - Time of image as requested by user.
         Returns: None.
         
         """
         # plot single mango image
-        img, __, __, truetime = self.get_data(site, targtime, self.download_data)
+        img, __, __, truetime = self.get_data(site, targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
@@ -59,7 +63,9 @@ class Mango(object):
         
         """
         Plots a single MANGO image on the map.
-        Parameters: Site of image, time image was taken.
+        Parameters: 
+            site - Site of image.
+            targtime - Time of image as requested by user.
         Returns: None.
 
         """
@@ -83,12 +89,14 @@ class Mango(object):
 
         plt.show()
 
-    def get_data(self,site,targtime,download_data):
+    def get_data(self,site,targtime):
         
         """
         Accesses the images and position of a site, given the site name and time.
-        Parameters: Site name, and time images were taken.
-        Returns: Image array, latitude and longitude of site and time.
+        Parameters: 
+            site - Site name.
+            targtime - Time images were taken.
+        Returns: Image array, latitude and longitude of site and time at which image was taken.
         
         """
         # read mango data file
@@ -112,8 +120,10 @@ class Mango(object):
     def read_datafile(self,filename,targtime):
         """
         Helper function for getting data; reads data in from h5py file.
-        Parameters: h5py filename, time images were taken.
-        Returns: Image array, latitude and longitude of site and time.
+        Parameters: 
+            filename - h5py filename.
+            targtime - Time of image as requested by user.
+        Returns: Image array, latitude and longitude of site and time image was taken.
         """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -136,7 +146,10 @@ class Mango(object):
         Fetches mango data from online repository.
         Curtesy of AReimer's url_fetcher() function.
         
-        Parameters: Site name, date and directory where files will be saved.
+        Parameters: 
+            site - Site name.
+            date - Date image was taken.
+            save_directory (Optional) - where files will be saved.
         Returns: None.
         """
 
@@ -196,7 +209,8 @@ class Mango(object):
         
         """
         Obtains information about sites given as user input
-        Parameters: List of sites
+        Parameters: 
+            sites - List of sites.
         Returns: List of dictionaries obtaining information about specified sites.
         """
         # create site list from the site file and user input
