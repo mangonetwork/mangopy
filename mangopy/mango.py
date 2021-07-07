@@ -30,10 +30,15 @@ class Mango(object):
 
         """
         Initializes MANGO object.
-        Parameters:
-            datadir (Optional) - Path to exisiting directory containing MANGO data.
-            download_data (Optional) - Specifies whether the data should be downloaded from ftp server, if not found locally.
-        Returns: None.
+        Parameters
+        ----------
+            datadir : str, optional
+                Path to exisiting directory containing MANGO data.
+            download_data : bool, optional
+                Specifies whether the data should be downloaded from ftp server, if not found locally.
+        Returns
+        -------
+            None
 
         """
 
@@ -50,10 +55,16 @@ class Mango(object):
 
         """
         Plots a single MANGO image.
-        Parameters:
-                site - Site of image.
-                targtime - Time of image as requested by user.
-        Returns: None.
+
+        Parameters
+        ----------
+            site : str
+                Site of image.
+            targtime : datetime object
+                Time of image as requested by user.
+
+        Returns
+        -------
 
         """
         # plot single mango image
