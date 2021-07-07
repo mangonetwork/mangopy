@@ -7,10 +7,15 @@ REQUIREMENTS = [
     'matplotlib >= 2.2.4'
 ]
 
+with open("README.rst", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(name='mangopy',
       version='0.0.2',
       description='Software for MANGO ASI network',
       author = 'P. Venkatraman, L. Lamarche, A. Bhatt',
+      long_description=long_description,
+      long_description_content_type="text/x-rst",
       license='GPLv3',
       packages=['mangopy'],
       install_requires=REQUIREMENTS,
