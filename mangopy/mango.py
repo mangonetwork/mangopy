@@ -28,17 +28,11 @@ class Mango(object):
 
     def __init__(self, datadir=None, download_data = False):
 
-        """
-        Initializes MANGO object.
-        Parameters
-        ----------
-            datadir : str, optional
-                Path to exisiting directory containing MANGO data.
-            download_data : bool, optional
-                Specifies whether the data should be downloaded from ftp server, if not found locally.
-        Returns
-        -------
-            None
+        """Initializes MANGO object.
+
+        Kwargs:
+            datadir (str): Path to exisiting directory containing MANGO data.
+            download_data (bool): If True, downloads data from ftp server.
 
         """
 
@@ -56,15 +50,9 @@ class Mango(object):
         """
         Plots a single MANGO image.
 
-        Parameters
-        ----------
-            site : str
-                Site of image.
-            targtime : datetime object
-                Time of image as requested by user.
-
-        Returns
-        -------
+        Args:
+            site (str): Site of image.
+            targtime (datetime object): Time of image as requested by user.
 
         """
         # plot single mango image
@@ -77,10 +65,10 @@ class Mango(object):
 
         """
         Plots a single MANGO image on the map.
-        Parameters:
-            site - Site of image.
-            targtime - Time of image as requested by user.
-        Returns: None.
+
+        Args:
+            site (str): Site of image.
+            targtime (datetime object): Time of image as requested by user.
 
         """
         # map single mango image
@@ -107,11 +95,17 @@ class Mango(object):
 
         """
         Accesses the images and position of a site, given the site name and time.
-        Parameters:
-            site - Site name.
-            targtime - Time images were taken.
-        Returns: Image array, latitude and longitude of site and time at which image was taken.
 
+        Args:
+            site (str): Site name.
+            targtime (datetime object): Time of image as requested by user.
+
+        Returns: 
+            img_array (array): Image array.
+            lat (float): Latitude of site.
+            lon (float): Longitude of site.
+            truetime (datetime object): Time at which image was taken.
+            
         """
         # read mango data file
         filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
@@ -134,10 +128,17 @@ class Mango(object):
     def read_datafile(self,filename,targtime):
         """
         Helper function for getting data; reads data in from h5py file.
-        Parameters:
-            filename - h5py filename.
-            targtime - Time of image as requested by user.
-        Returns: Image array, latitude and longitude of site and time image was taken.
+
+        Args:
+            filename (str): h5py filename.
+            targtime (datetime object): Time of image as requested by user.
+
+        Returns: 
+            img_array (array): Image array.
+            lat (float): latitude of site.
+            lon (float): longitude of site.
+            truetime (datetime object): time image was taken.
+
         """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -160,11 +161,13 @@ class Mango(object):
         Fetches mango data from online repository.
         Curtesy of AReimer's url_fetcher() function.
 
-        Parameters:
-            site - Site name.
-            date - Date image was taken.
-            save_directory (Optional) - where files will be saved.
-        Returns: None.
+        Args:
+            site (str): Site name.
+            date (datetime object): Date image was taken.
+
+        Kwargs:
+            save_directory (str): Where files will be saved.
+
         """
 
         # make sure save directory exists
@@ -217,15 +220,17 @@ class Mango(object):
         ftp.quit()
 
 
-
-
     def get_site_info(self,sites):
 
         """
-        Obtains information about sites given as user input
-        Parameters:
-            sites - List of sites.
-        Returns: List of dictionaries obtaining information about specified sites.
+        Obtains information about sites given as user input.
+
+        Args:
+            sites (list): List of sites.
+
+        Returns: 
+            site_list (list): List of dictionaries with information about sites.
+
         """
         # create site list from the site file and user input
         sitefile = os.path.join(self.mangopy_path,'SiteInformation.csv')
