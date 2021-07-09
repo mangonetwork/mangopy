@@ -13,7 +13,7 @@ Welcome to mangopy's documentation!
    readme
    installation
    usage
-   mangopy
+   reference
 
 
 Indices and tables

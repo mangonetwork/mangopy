@@ -1,5 +1,5 @@
-Function Reference
-==================
+Reference
+=========
 
 Mango class
 -----------
@@ -9,10 +9,10 @@ Mango class
     :undoc-members:
     :show-inheritance:
 
-mangopy.mosaic module
----------------------
+Mosaic class
+------------
 
-.. automodule:: mangopy.mosaic
+.. autoclass:: mangopy.Mosaic
     :members:
     :undoc-members:
     :show-inheritance:

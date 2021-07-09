@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.abspath('../mangopy'))
 master_doc = 'index'
 
 project = 'mangopy'
-copyright = '2021, A. Bhatt'
-author = 'A. Bhatt'
+copyright = '2021, MANGO Team'
+author = 'P. Venkatraman, L. Lamarche, A. Bhatt'
 
 
 # -- General configuration ---------------------------------------------------

@@ -10,10 +10,12 @@ Installing cartopy
 
 Installing mangopy
 ------------------
-Mangopy can be installed with pip directly from the GitHub repository::
+Mangopy can be installed with pip::
 
-  pip install git+https://github.com/mangonetwork/mangopy.git
+  pip install mangopy
 
 The mangopy developers encourage community contributions!  Please create a `pull request <https://github.com/mangonetwork/mangopy/pulls>`_ if you've fixed a problem or created a new feature that would be useful to the community!
 
 For basic usage examples, please refer to the mangopy tutorial jupyter notebook, `mangopy tutorial <https://github.com/astib/MANGO/blob/master/mangopy_tutorial.ipynb>`_.
+
+`Full mangopy documentation <https://mangopy.readthedocs.io/en/latest/>`_
