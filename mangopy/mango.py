@@ -25,16 +25,19 @@ from future.utils import raise_from
 
 
 class Mango(object):
+    """
+    Object for accessing and ploting data from a single MANGO camera.
+
+    Parameters
+    ==========
+    datadir : str, optional
+        Path to exisiting directory containing MANGO data.
+    download_data : bool, optional
+        If True, downloads data from ftp server.
+
+    """
 
     def __init__(self, datadir=None, download_data = False):
-
-        """Initializes MANGO object.
-
-        Args:
-            datadir (str, optional): Path to exisiting directory containing MANGO data.
-            download_data (bool, optional): If True, downloads data from ftp server.
-
-        """
 
         self.mangopy_path = os.path.dirname(os.path.realpath(__file__))
         # if no data directory specified, use a default temp directory
@@ -50,9 +53,12 @@ class Mango(object):
         """
         Plots a single MANGO image.
 
-        Args:
-            site (str): Site of image.
-            targtime (datetime object): Time of image as requested by user.
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
 
         """
         # plot single mango image
@@ -66,9 +72,12 @@ class Mango(object):
         """
         Plots a single MANGO image on the map.
 
-        Args:
-            site (str): Site of image.
-            targtime (datetime object): Time of image as requested by user.
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
 
         """
         # map single mango image
@@ -96,18 +105,24 @@ class Mango(object):
         """
         Accesses the images and position of a site, given the site name and time.
 
-        Args:
-            site (str): Site name.
-            targtime (datetime object): Time of image as requested by user.
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
 
-        Returns:
-            (tuple): tuple containing: 
-            
-                img_array (array): Image array.
-                lat (float): Latitude of site.
-                lon (float): Longitude of site.
-                truetime (datetime object): Time at which image was taken.
-            
+        Returns
+        =======
+        img_array : array
+            Image array
+        lat : float
+            Latitude array
+        lon : float
+            Longitude array
+        truetime : datetime object
+            Time at which image was taken.
+
         """
         # read mango data file
         filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
@@ -129,20 +144,25 @@ class Mango(object):
 
     def read_datafile(self,filename,targtime):
         """
-        Helper function for getting data; reads data in from h5py file.
+        Helper function for getting data; reads data in from hdf5 file.
 
-        Args:
-            filename (str): h5py filename.
-            targtime (datetime object): Time of image as requested by user.
+        Parameters
+        ==========
+        filename : str
+            hdf5 filename
+        targtime : datetime object
+            Time of image as requested by user
 
-        Returns: 
-            (tuple): tuple containing:
-
-                img_array (array): Image array.
-                lat (float): latitude of site.
-                lon (float): longitude of site.
-                truetime (datetime object): time image was taken.
-
+        Returns
+        =======
+        img_array : array
+            Image array
+        lat : float
+            Latitude array
+        lon : float
+            Longitude array
+        truetime : datetime object
+            Time image was taken
         """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
@@ -165,10 +185,14 @@ class Mango(object):
         Fetches mango data from online repository.
         Curtesy of AReimer's url_fetcher() function.
 
-        Args:
-            site (str): Site name.
-            date (datetime object): Date image was taken.
-            save_directory (str, optional): Where files will be saved.
+        Parameters
+        ==========
+        site : str
+            Camera site name.
+        date : datetime object
+            Date image was taken.
+        save_directory : str, optional
+            Directory where files will be saved.
 
         """
 
@@ -227,11 +251,15 @@ class Mango(object):
         """
         Obtains information about sites given as user input.
 
-        Args:
-            sites (list): List of sites.
+        Parameters
+        ==========
+        sites : list
+            List of sites.
 
-        Returns: 
-            site_list (list): List of dictionaries with information about sites.
+        Returns
+        =======
+        site_list : list
+            List of dictionaries with information about sites.
 
         """
         # create site list from the site file and user input
