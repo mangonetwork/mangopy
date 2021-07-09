@@ -44,9 +44,9 @@ class Mosaic(Mango):
     def generate_grid(self):
         """
         Create base background grid.
-        Original images have the following approximate resolution:
-        lat_res ~ 0.025 degrees
-        lon_res ~ 0.035 degrees
+        Original images have the following approximate resolution:\n
+        lat_res ~ 0.025 degrees\n
+        lon_res ~ 0.035 degrees\n
 
         Returns
         =======
@@ -365,7 +365,6 @@ class Mosaic(Mango):
 
 
     def create_all_mosaic(self,date):
-
         '''
         Creates all mosaic images for a particular date.
         Images should be approximately 5 minutes apart.
@@ -427,6 +426,16 @@ class Mosaic(Mango):
 
 
     def create_mosaic_movie(self,date):
+        '''
+        Creates a movie of all mosaic images for particular date.
+        Requires ffmpeg to be installed.
+
+        Parameters
+        ==========
+        date : datetime object
+            Date for which mosaic movie is created.
+
+        '''
         # create *.png image files for the given date
         self.create_all_mosaic(date)
 
