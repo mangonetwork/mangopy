@@ -11,8 +11,11 @@ import datetime as dt
 import h5py
 import csv
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+try:
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+except ImportError:
+    print('WARNING: cartopy is not installed')
 import os
 # import urllib
 # from contextlib import closing
@@ -22,8 +25,19 @@ from future.utils import raise_from
 
 
 class Mango(object):
+    """
+    Object for accessing and ploting data from a single MANGO camera.
 
-    def __init__(self, datadir=None):
+    Parameters
+    ==========
+    datadir : str, optional
+        Path to exisiting directory containing MANGO data.
+    download_data : bool, optional
+        If True, downloads data from ftp server.
+
+    """
+
+    def __init__(self, datadir=None, download_data = False):
 
         self.mangopy_path = os.path.dirname(os.path.realpath(__file__))
         # if no data directory specified, use a default temp directory
@@ -31,16 +45,42 @@ class Mango(object):
             datadir = os.path.join(tempfile.gettempdir(),'MANGOData')
             print('No data directory has been specified!  If data is downloaded, it will be saved to {}.  This is also where mangopy will look for existing data files.'.format(datadir))
         self.datadir = datadir
+        self.download_data = download_data
 
 
     def plot(self,site,targtime):
+
+        """
+        Plots a single MANGO image.
+
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
+
+        """
         # plot single mango image
-        img, __, __, truetime = self.get_data(site,targtime)
+        img, __, __, truetime = self.get_data(site, targtime)
         plt.imshow(img, cmap=plt.get_cmap('gist_heat'))
         plt.title('{:%Y-%m-%d %H:%M}'.format(truetime))
         plt.show()
 
     def map(self,site,targtime):
+
+        """
+        Plots a single MANGO image on the map.
+
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
+
+
+        """
         # map single mango image
         img, lat, lon, truetime = self.get_data(site,targtime)
 
@@ -49,7 +89,7 @@ class Mango(object):
         map_proj = ccrs.LambertConformal(central_longitude=np.nanmean(lon),central_latitude=np.nanmean(lat))
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
-        ax.gridlines()
+        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
         ax.add_feature(cfeature.STATES)
         ax.set_extent([np.nanmin(lon),np.nanmax(lon),np.nanmin(lat),np.nanmax(lat)])
 
@@ -62,6 +102,30 @@ class Mango(object):
         plt.show()
 
     def get_data(self,site,targtime):
+
+        """
+        Accesses the images and position of a site, given the site name and time.
+
+        Parameters
+        ==========
+        site : str
+            Camera site name
+        targtime : datetime object
+            Time of image as requested by user.
+
+        Returns
+        =======
+        img_array : array
+            Image array
+        lat : float
+            Latitude array
+        lon : float
+            Longitude array
+        truetime : datetime object
+            Time at which image was taken.
+
+
+        """
         # read mango data file
         filename = os.path.join(self.datadir,'{0}/{1:%b%d%y}/{2}{1:%b%d%y}.h5'.format(site['name'],targtime,site['code']))
 
@@ -70,14 +134,38 @@ class Mango(object):
             img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
         # if that fails, try to download, then read the data file
         except (OSError, IOError):
-            print('Attempting to download {} from FTP server.'.format(os.path.basename(filename)))
-            self.fetch_datafile(site, targtime.date())
-            img_array, lat, lon, truetime = self.read_datafile(filename,targtime)
+            if self.download_data:
+                print('Attempting to download {} from FTP server.'.format(os.path.basename(filename)))
+                self.fetch_datafile(site, targtime.date())
+                img_array, lat, lon, truetime = self.read_datafile(filename, targtime)
+            else:
+                raise OSError('No data found locally, unable to access FTP server upon user request.')
 
         return img_array, lat, lon, truetime
 
 
     def read_datafile(self,filename,targtime):
+        """
+        Helper function for getting data; reads data in from hdf5 file.
+
+        Parameters
+        ==========
+        filename : str
+            hdf5 filename
+        targtime : datetime object
+            Time of image as requested by user
+
+        Returns
+        =======
+        img_array : array
+            Image array
+        lat : float
+            Latitude array
+        lon : float
+            Longitude array
+        truetime : datetime object
+            Time image was taken
+        """
         with h5py.File(filename, 'r') as file:
             tstmp0 = (targtime-dt.datetime.utcfromtimestamp(0)).total_seconds()
             tstmp = file['Time'][:]
@@ -95,8 +183,20 @@ class Mango(object):
         return img_array, lat, lon, truetime
 
     def fetch_datafile(self, site, date, save_directory=None):
-        # fetch mango data from online repository
-        # Curtesy of AReimer's url_fetcher() function
+        """
+        Fetches mango data from online repository.
+        Curtesy of AReimer's url_fetcher() function.
+
+        Parameters
+        ==========
+        site : str
+            Camera site name.
+        date : datetime object
+            Date image was taken.
+        save_directory : str, optional
+            Directory where files will be saved.
+
+        """
 
         # make sure save directory exists
         if not save_directory:
@@ -148,9 +248,22 @@ class Mango(object):
         ftp.quit()
 
 
-
-
     def get_site_info(self,sites):
+
+        """
+        Obtains information about sites given as user input.
+
+        Parameters
+        ==========
+        sites : list
+            List of sites.
+
+        Returns
+        =======
+        site_list : list
+            List of dictionaries with information about sites.
+
+        """
         # create site list from the site file and user input
         sitefile = os.path.join(self.mangopy_path,'SiteInformation.csv')
 

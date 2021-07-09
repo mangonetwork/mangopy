@@ -1,18 +1,20 @@
 # mosaic.py
 # create mosaic plot from multiple MANGO sites
-# 
+#
 # created 2019-03-13 by LLamarche
 # - site regridding is stored in regrid_image_index.h5
 #   - this file can be removed, but it will be recreated
 #     every time the program is run
 
 
-
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+try:
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+except ImportError:
+    print('WARNING: cartopy is not installed')
 from scipy import interpolate
 import os
 import datetime as dt
@@ -21,6 +23,17 @@ from .mango import Mango
 
 
 class Mosaic(Mango):
+    """
+    Object for creating and visualizing mosaics of all cameras in the MANGO network.
+
+    Parameters
+    ==========
+    sites : list, optional
+        Sites to be plotted as mosaic on map.
+    datadir : str, optional
+        Path to exisiting directory containing MANGO data.
+
+    """
 
     def __init__(self,sites='all',datadir=None):
 
@@ -29,11 +42,21 @@ class Mosaic(Mango):
 
 
     def generate_grid(self):
+        """
+        Create base background grid.
+        Original images have the following approximate resolution:\n
+        lat_res ~ 0.025 degrees\n
+        lon_res ~ 0.035 degrees\n
 
-        # create base background grid
-        # original images have the following approximate resolution:
-        # lat_res ~ 0.025 degrees
-        # lon_res ~ 0.035 degrees
+        Returns
+        =======
+        grid_array : array
+            Array of grid latitude and longitude values.
+        edge_array : array
+            Array of edge latitude and longitude values.
+
+        """
+
         latmin = 25.
         latmax = 55.
         latstp = 0.02
@@ -48,12 +71,30 @@ class Mosaic(Mango):
         grid_lon, grid_lat = np.meshgrid(lon_arr,lat_arr)
         edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
 
+        grid_array = np.array([grid_lon, grid_lat])
+        edge_array = np.array([edge_lon, edge_lat])
         # return flat_grid
-        return np.array([grid_lon, grid_lat]), np.array([edge_lon, edge_lat])
+        return grid_array, edge_array
 
 
     def site_hierarchy(self,grid_points):
-        # calculate site hiarcy for common grid based on the distance of each point from each site
+        """
+        Calculates site hierarchy for common grid based on the
+        distance of each point from each site.  Site hierarchy
+        is used to determine which camera to plot in each cell
+        of the mosaic.
+
+        Parameters
+        ==========
+        grid_points : array
+            Coordinate points of base background grid.
+
+        Returns
+        =======
+        hierarchy : array
+            Array containing hierarchy of sites.
+
+        """
         grid_distance = []
         for site in self.site_list:
             dist = self.haversine(site['lat'],site['lon'],grid_points[1],grid_points[0])
@@ -66,25 +107,64 @@ class Mosaic(Mango):
 
 
     def haversine(self,lat0,lon0,lat,lon):
-        # calculates distance (in km) between two points on earth assuming spherical Earth
+        """
+        Calculates distance (in km) between two points on Earth,
+        assuming spherical Earth.
 
-        # convert decimal degrees to radians 
-        lon0 = lon0*np.pi/180.
-        lat0 = lat0*np.pi/180.
-        lon = lon*np.pi/180.
-        lat = lat*np.pi/180.
+        Parameters
+        ==========
+        lat0 : float
+            Latitude of site.
+        lon0 : float
+            Longitude of site.
+        lat : float
+            Latitude of grid.
+        lon : float
+            Longitude of grid.
 
-        # Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
+        Returns
+        =======
+        km : float
+            Haversine distance in kilometers.
+
+        """
+        #convert decimal degrees to radians
+        lon0 = lon0*np.pi/180
+        lat0 = lat0*np.pi/180
+        lon = lon*np.pi/180
+        lat = lat*np.pi/180
+
+        #source: Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
         dlon = lon - lon0 
         dlat = lat - lat0 
         a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
         c = 2 * np.arcsin(np.sqrt(a)) 
+
         # Radius of earth in kilometers is 6371
         km = 6371* c
         return km
 
 
     def get_nearest_index(self,site,background_grid,time):
+        """
+        Gets nearest neighbor interpolation indices for the specifed site.
+
+        Parameters
+        ==========
+        site : str
+            Site for which you need indices.
+        background_grid : array
+            Base background grid.
+        time : datetime object
+            Time of image as requested by user.
+
+        Returns
+        =======
+        nearest_idx : array
+            Nearest index of each image cell closest to grid cell.
+
+        """
+
 
         rewrite_file = False
         regrid_file = os.path.join(self.mangopy_path,'regrid_image_index.h5')
@@ -95,7 +175,7 @@ class Mosaic(Mango):
             with h5py.File(regrid_file,'r') as f:
                 nearest_idx = f[site['name']][:]
         except:
-            
+
             flat_grid = np.array([background_grid[0].ravel(),background_grid[1].ravel()]).T
             lon_arr = background_grid[0,0,:]
             lat_arr = background_grid[1,:,0]
@@ -140,6 +220,26 @@ class Mosaic(Mango):
 
 
     def grid_mosaic(self,time,grid,hierarchy):
+        """
+        Creates combined grid based on hierarchy.
+
+        Parameters
+        ==========
+        time : datetime object
+            Time of images on mosaic as requested by user.
+        grid : array
+            Base background grid.
+        hierarchy : array
+            Hierarchy of sites to be plotted.
+
+        Returns
+        =======
+        combined_grid : array
+            Combined grid.
+        truetime : datetime object
+            Time images were taken.
+
+        """
         grid_img = []
         truetime = []
         for site in self.site_list:
@@ -156,10 +256,10 @@ class Mosaic(Mango):
 
             flat_img = img.ravel()
 
-            # get nearest neighbor interpolation idices for this site
+            #get nearest neighbor interpolation indices for this site
             nearest_idx = self.get_nearest_index(site,grid,time)  # nearest index is site specific
 
-            # interpolate image to grid
+            #interpolate image to grid
             img_interp = np.full(grid[0].shape,np.nan)
             img_interp[np.isfinite(nearest_idx)] = flat_img[nearest_idx[np.isfinite(nearest_idx)].astype('int32')]
 
@@ -183,6 +283,27 @@ class Mosaic(Mango):
 
     def create_mosaic(self,time,cell_edges=False):
 
+        """
+        Creates the background grid for images at specifed time.
+
+        Parameters
+        ==========
+        time : datetime object
+            User requested time.
+        cell_edges : boolean, optional
+            Draws cell edges if set to True.
+
+        Returns
+        =======
+        combined_grid : array
+            Background grid image.
+        grid_lat_values : array
+            Grid latitude values.
+        grid_lon_values : array
+            Grid longitude values.
+
+        """
+
         # create background grid
         grid, edges = self.generate_grid()
 
@@ -192,16 +313,31 @@ class Mosaic(Mango):
         # create mosaic of all sites on background grid
         combined_grid, truetime = self.grid_mosaic(time,grid,hierarchy)
 
+        grid_lat_values = grid[1]
+        grid_lon_values = grid[0]
 
         if cell_edges:
             # edge_lon, edge_lat = np.meshgrid(np.arange(lonmin-0.5*lonstp,lonmax,lonstp),np.arange(latmin-0.5*latstp,latmax,latstp))
-            return combined_grid, grid[1], grid[0], edges[1], edges[0], truetime
+            return combined_grid, grid_lat_values, grid_lon_values, edges[1], edges[0], truetime
         else:
-            return combined_grid, grid[1], grid[0]
+            return combined_grid, grid_lat_values, grid_lon_values
 
 
-    def plot_mosaic(self,time,dpi=300):
+    def plot_mosaic(self,time,dpi=300,saveFig = False):
 
+        """
+        Plots images of sites closest to requested time on map with grid.
+
+        Parameters
+        ==========
+        time : datetime object
+            Time of images on mosaic as requested by user.
+        dpi : int, optional
+            Defaults to 300.
+        saveFig : boolean, optional
+            Saves figure of mosaic if set to True.
+
+        """
         # get background grid image and coordinates
         img, grid_lat, grid_lon, edge_lat, edge_lon, truetime = self.create_mosaic(time, cell_edges=True)
 
@@ -210,7 +346,7 @@ class Mosaic(Mango):
         map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
         ax = fig.add_subplot(111,projection=map_proj)
         ax.coastlines()
-        ax.gridlines()
+        ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
         ax.add_feature(cfeature.STATES)
         ax.set_extent([235,285,20,52])
 
@@ -224,17 +360,24 @@ class Mosaic(Mango):
         img_times = ['{} - {:%H:%M:%S}'.format(site['name'],ttime) for site, ttime in zip(self.site_list, truetime) if ttime]
         img_times = '\n'.join(img_times)
         ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
-
-
-
-        plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time), dpi=dpi)
+        if saveFig:
+            plt.savefig('mosaic_{:%Y%m%d_%H%M}'.format(time), dpi=dpi)
         plt.show()
 
 
-    def create_all_mosaic(self,date):
-        # create all mosaic images for a particular date
 
-        # create time list for night (images should be ~5 minutes appart)
+    def create_all_mosaic(self, date, saveFig=False):
+        '''
+        Creates all mosaic images for a particular date.
+        Images should be approximately 5 minutes apart.
+
+        Parameters
+        ==========
+        date : datetime object
+            Date for which mosaic is created.
+
+        '''
+        # create time list for night (images should be ~5 minutes apart)
         # currently this is hard-coded to range from 2-11 UT on the date given
         # Note - start and end times vary by season and should be determined by the data in some way
         starttime = dt.datetime.combine(date,dt.time(2,0,0))
@@ -265,7 +408,7 @@ class Mosaic(Mango):
             map_proj = ccrs.LambertConformal(central_longitude=255.,central_latitude=40.0)
             ax = fig.add_subplot(111,projection=map_proj)
             ax.coastlines()
-            ax.gridlines()
+            ax.gridlines(color='lightgrey', linestyle='-', draw_labels=True, x_inline = False, y_inline = False)
             ax.add_feature(cfeature.STATES)
             ax.set_extent([235,285,20,52])
 
@@ -281,10 +424,21 @@ class Mosaic(Mango):
             ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
 
             # save image
-            plt.savefig('{}/mosaic_{:%Y%m%d_%H%M}'.format(savedir,time), dpi=300)
+            if saveFig:
+                plt.savefig('{}/mosaic_{:%Y%m%d_%H%M}'.format(savedir,time), dpi=300)
 
 
     def create_mosaic_movie(self,date):
+        '''
+        Creates a movie of all mosaic images for particular date.
+        Requires ffmpeg to be installed.
+
+        Parameters
+        ==========
+        date : datetime object
+            Date for which mosaic movie is created.
+
+        '''
         # create *.png image files for the given date
         self.create_all_mosaic(date)
 

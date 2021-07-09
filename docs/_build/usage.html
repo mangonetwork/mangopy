@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Usage &#8212; mangopy  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference/index.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<section id="mango">
+<h2>Mango<a class="headerlink" href="#mango" title="Permalink to this headline">¶</a></h2>
+<p>First, import the Mango class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mangopy</span> <span class="kn">import</span> <span class="n">Mango</span>
+<span class="o">%</span><span class="n">pylab</span> <span class="n">inline</span>
+</pre></div>
+</div>
+<p>To instantiate a Mango object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mango_object</span> <span class="o">=</span> <span class="n">Mango</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can also specify the directory where the data can be found using the ‘datadir’ keyword.</p>
+<p>Specify what site you would like to look at. For example, for Capitol Reef Field Station:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">site</span> <span class="o">=</span> <span class="n">mango_object</span><span class="o">.</span><span class="n">get_site_info</span><span class="p">(</span><span class="s1">&#39;Capitol Reef Field Station&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To specify a particular time and view an image, import datetime, and set a datetime object. You can view the image for the specified site at this time:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+
+<span class="n">time_obj</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">mango_object</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">time_obj</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To show the site on a map:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mango_object</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">time_obj</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="mosaic">
+<h2>Mosaic<a class="headerlink" href="#mosaic" title="Permalink to this headline">¶</a></h2>
+<p>Now, import the Mosaic class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mangopy</span> <span class="kn">import</span> <span class="n">Mosaic</span>
+</pre></div>
+</div>
+<p>Here’s how you can instantiate the Mosaic class. By default, all sites will appear on the Mosaic, but you can specify a list of sites using the sites keyword. For all sites:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mosaic_all_sites</span> <span class="o">=</span> <span class="n">Mosaic</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To visualize a mosaic of Capitol Reef Field Station and Bridger alone:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mosaic_specific</span> <span class="o">=</span> <span class="n">Mosaic</span><span class="p">(</span><span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Capitol Reef Field Station&#39;</span><span class="p">,</span> <span class="s1">&#39;Bridger&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>To plot the mosaic for all sites at the time specifed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mosaic_all_sites</span><span class="o">.</span><span class="n">plot_mosaic</span><span class="p">(</span><span class="n">time_obj</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you prefer working with Jupyter Notebooks, here is the same <a class="reference external" href="https://github.com/mangonetwork/mangopy/blob/master/mangopy_tutorial.ipynb">tutorial</a>, with an additional ‘Accessing Data’ example available on Jupyter Notebooks.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">mangopy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">mangopy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mango">Mango</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mosaic">Mosaic</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="reference/index.html" title="next chapter">Reference</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, A. Bhatt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
