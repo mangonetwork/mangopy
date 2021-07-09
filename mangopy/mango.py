@@ -30,9 +30,9 @@ class Mango(object):
 
         """Initializes MANGO object.
 
-        Kwargs:
-            datadir (str): Path to exisiting directory containing MANGO data.
-            download_data (bool): If True, downloads data from ftp server.
+        Args:
+            datadir (str, optional): Path to exisiting directory containing MANGO data.
+            download_data (bool, optional): If True, downloads data from ftp server.
 
         """
 
@@ -100,11 +100,13 @@ class Mango(object):
             site (str): Site name.
             targtime (datetime object): Time of image as requested by user.
 
-        Returns: 
-            img_array (array): Image array.
-            lat (float): Latitude of site.
-            lon (float): Longitude of site.
-            truetime (datetime object): Time at which image was taken.
+        Returns:
+            (tuple): tuple containing: 
+            
+                img_array (array): Image array.
+                lat (float): Latitude of site.
+                lon (float): Longitude of site.
+                truetime (datetime object): Time at which image was taken.
             
         """
         # read mango data file
@@ -134,10 +136,12 @@ class Mango(object):
             targtime (datetime object): Time of image as requested by user.
 
         Returns: 
-            img_array (array): Image array.
-            lat (float): latitude of site.
-            lon (float): longitude of site.
-            truetime (datetime object): time image was taken.
+            (tuple): tuple containing:
+
+                img_array (array): Image array.
+                lat (float): latitude of site.
+                lon (float): longitude of site.
+                truetime (datetime object): time image was taken.
 
         """
         with h5py.File(filename, 'r') as file:
@@ -164,9 +168,7 @@ class Mango(object):
         Args:
             site (str): Site name.
             date (datetime object): Date image was taken.
-
-        Kwargs:
-            save_directory (str): Where files will be saved.
+            save_directory (str, optional): Where files will be saved.
 
         """
 
