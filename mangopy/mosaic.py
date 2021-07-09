@@ -56,6 +56,7 @@ class Mosaic(Mango):
             Array of edge latitude and longitude values.
 
         """
+
         latmin = 25.
         latmax = 55.
         latstp = 0.02
@@ -134,11 +135,10 @@ class Mosaic(Mango):
         lat = lat*np.pi/180
 
         #source: Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
-
-        dlon = lon - lon0
-        dlat = lat - lat0
+        dlon = lon - lon0 
+        dlat = lat - lat0 
         a = np.sin(dlat/2)**2 + np.cos(lat0) * np.cos(lat) * np.sin(dlon/2)**2
-        c = 2 * np.arcsin(np.sqrt(a))
+        c = 2 * np.arcsin(np.sqrt(a)) 
 
         # Radius of earth in kilometers is 6371
         km = 6371* c
@@ -164,6 +164,7 @@ class Mosaic(Mango):
             Nearest index of each image cell closest to grid cell.
 
         """
+
 
         rewrite_file = False
         regrid_file = os.path.join(self.mangopy_path,'regrid_image_index.h5')
@@ -364,7 +365,8 @@ class Mosaic(Mango):
         plt.show()
 
 
-    def create_all_mosaic(self,date):
+
+    def create_all_mosaic(self, date, saveFig=False):
         '''
         Creates all mosaic images for a particular date.
         Images should be approximately 5 minutes apart.
@@ -422,7 +424,8 @@ class Mosaic(Mango):
             ax.text(0.05,-0.03,img_times,verticalalignment='top',transform=ax.transAxes)
 
             # save image
-            plt.savefig('{}/mosaic_{:%Y%m%d_%H%M}'.format(savedir,time), dpi=300)
+            if saveFig:
+                plt.savefig('{}/mosaic_{:%Y%m%d_%H%M}'.format(savedir,time), dpi=300)
 
 
     def create_mosaic_movie(self,date):

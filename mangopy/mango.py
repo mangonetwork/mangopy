@@ -79,6 +79,7 @@ class Mango(object):
         targtime : datetime object
             Time of image as requested by user.
 
+
         """
         # map single mango image
         img, lat, lon, truetime = self.get_data(site,targtime)
@@ -122,6 +123,7 @@ class Mango(object):
             Longitude array
         truetime : datetime object
             Time at which image was taken.
+
 
         """
         # read mango data file
