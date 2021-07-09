@@ -139,7 +139,7 @@ class Mango(object):
                 self.fetch_datafile(site, targtime.date())
                 img_array, lat, lon, truetime = self.read_datafile(filename, targtime)
             else:
-                print('No data found locally, unable to access FTP server upon user request.')
+                raise OSError('No data found locally, unable to access FTP server upon user request.')
 
         return img_array, lat, lon, truetime
 

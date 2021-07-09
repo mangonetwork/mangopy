@@ -6,7 +6,7 @@ time = dt.datetime(2021,5,5,6,25)
 # date = dt.datetime(2017,6,10)
 
 # plot single FoV
-m = mango.Mango(download_data=True)
+m = mango.Mango(download_data=False)
 site = m.get_site_info('Hat Creek Observatory')
 # m.fetch_datafile(site,time.date())
 m.plot(site,time)
@@ -16,7 +16,7 @@ img_array, lat, lon, truetime = m.get_data(site,time)
 print(img_array)
 
 # plot mosaic
-m = mango.Mosaic(download_data=True)
+m = mango.Mosaic(download_data=False)
 m.plot_mosaic(time)
 mos, lat, lon = m.create_mosaic(time)
 print(mos)
