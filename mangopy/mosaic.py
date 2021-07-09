@@ -6,22 +6,22 @@
 #   - this file can be removed, but it will be recreated
 #     every time the program is run
 
-        """
-        Helper function for getting data; reads data in from h5py file.
+"""
+Helper function for getting data; reads data in from h5py file.
 
-        Args:
-            filename (str): h5py filename.
-            targtime (datetime object): Time of image as requested by user.
+Args:
+    filename (str): h5py filename.
+    targtime (datetime object): Time of image as requested by user.
 
-        Returns: 
-            (tuple): tuple containing:
+Returns:
+    (tuple): tuple containing:
 
-                img_array (array): Image array.
-                lat (float): latitude of site.
-                lon (float): longitude of site.
-                truetime (datetime object): time image was taken.
+        img_array (array): Image array.
+        lat (float): latitude of site.
+        lon (float): longitude of site.
+        truetime (datetime object): time image was taken.
 
-        """
+"""
 
 import numpy as np
 import h5py
@@ -57,7 +57,7 @@ class Mosaic(Mango):
 
     def generate_grid(self):
 
-        """ Create base background grid. 
+        """ Create base background grid.
         Original images have the following approximate resolution:
         lat_res ~ 0.025 degrees
         lon_res ~ 0.035 degrees
@@ -90,7 +90,7 @@ class Mosaic(Mango):
 
     def site_hierarchy(self,grid_points):
         """
-        Calculates site hierarchy for common grid based on the 
+        Calculates site hierarchy for common grid based on the
         distance of each point from each site.
 
         Args:
@@ -154,7 +154,7 @@ class Mosaic(Mango):
             background_grid (array): Base background grid.
             time (datetime object): Time of image as requested by user.
 
-        Returns: 
+        Returns:
             nearest_idx (array): Nearest index of each image cell
             closest to grid cell.
 
@@ -222,7 +222,7 @@ class Mosaic(Mango):
             grid (array): Base background grid.
             hierarchy (array): Hierarchy of sites to be plotted.
 
-        Returns: 
+        Returns:
             (tuple): tuple containing:
                 combined_grid (array): Combined grid.
                 truetime (datetime object): Time images were taken.
@@ -278,7 +278,7 @@ class Mosaic(Mango):
             time (datetime object): User requested time.
             cell_edges (boolean, optional): Draws cell edges if set to True.
 
-        Returns: 
+        Returns:
             (tuple): tuple containing:
                 combined_grid (array): Background grid image.
                 grid_lat_values (array): Grid latitude values.
@@ -346,7 +346,7 @@ class Mosaic(Mango):
     def create_all_mosaic(self,date):
 
         '''
-        Creates all mosaic images for a particular date. 
+        Creates all mosaic images for a particular date.
         Images should be approximately 5 minutes apart.
 
         Args:
