@@ -7,7 +7,11 @@ Installing cartopy
 
 Installing mangopy
 ------------------
-Mangopy can be installed with pip directly from the GitHub repository::
+Mangopy can be installed with pip::
+
+  pip install mangopy
+
+Alternatively, mangopy can be installed directly from the GitHub repository::
 
   pip install git+https://github.com/mangonetwork/mangopy.git
 

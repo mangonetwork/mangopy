@@ -13,6 +13,8 @@ To instantiate a Mango object::
 
 	mango_object = Mango()
 
+You can also specify the directory where the data can be found using the 'datadir' keyword.
+
 Specify what site you would like to look at. For example, for Capitol Reef Field Station::
 
 	site = mango_object.get_site_info('Capitol Reef Field Station')
