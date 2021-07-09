@@ -11,7 +11,7 @@ with open("README.rst", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='mangopy',
-      version='0.0.2',
+      version='1.0.1',
       description='Software for MANGO ASI network',
       author = 'P. Venkatraman, L. Lamarche, A. Bhatt',
       long_description=long_description,
